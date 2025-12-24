@@ -70,9 +70,9 @@ const ProductDetailModal = ({ product, open, onClose }: Props) => {
           <div className="flex flex-col px-5 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 overflow-y-auto max-h-[calc(90vh-200px)] sm:max-h-[calc(95vh-280px)] lg:max-h-full">
 
             {/* TOP */}
-            <div className="space-y-3 sm:space-y-4 lg:space-y-5 flex-1 pb-4">
+            <div className="space-y-3 sm:space-y-4 flex-1 pb-4">
 
-              <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight leading-tight pr-8 lg:pr-0">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight pr-8 lg:pr-0">
                 {product.name}
               </h2>
 
@@ -100,14 +100,14 @@ const ProductDetailModal = ({ product, open, onClose }: Props) => {
 
                 <Badge
                   variant="outline"
-                  className="px-2.5 py-1 text-xs sm:text-sm bg-secondary/20 text-secondary border-secondary/50"
+                  className="px-2.5 py-1 text-xs sm:text-sm bg-purple-500/20 text-purple-400 border-purple-500/50 font-semibold"
                 >
                   {product.category}
                 </Badge>
               </div>
 
               {/* DESCRIPTION */}
-              <p className="text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed">
+              <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
                 {product.description}
               </p>
             </div>
@@ -121,11 +121,11 @@ const ProductDetailModal = ({ product, open, onClose }: Props) => {
                 }}
                 size="lg"
                 variant={inCart ? "outline" : "default"}
-                className={`w-full h-11 sm:h-12 lg:h-14 text-sm sm:text-base font-semibold ${
+                className={`w-full h-11 sm:h-12 lg:h-14 text-sm sm:text-base font-semibold transition-all ${
                   inCart
-                    ? "bg-primary/20 text-primary border-primary/50"
+                    ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/50 hover:bg-cyan-500/30"
                     : product.inStock
-                    ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                    ? "bg-cyan-500 hover:bg-cyan-600 text-white"
                     : "bg-muted/50 text-muted-foreground cursor-not-allowed"
                 }`}
               >

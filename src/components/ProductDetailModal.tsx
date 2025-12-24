@@ -27,21 +27,17 @@ const ProductDetailModal = ({ product, open, onClose }: Props) => {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="
+          w-[96vw] sm:w-[92vw] md:w-[90vw] lg:w-[85vw] xl:w-full
           max-w-6xl
-          w-[96vw]
-          sm:w-[92vw]
-          md:w-[90vw]
-          lg:w-[85vw]
-          xl:w-full
-          max-h-[92vh]
+          h-[92vh]
           p-0
           bg-neutral-950
           border border-white/10
-          flex
-          flex-col
+          flex flex-col
+          overflow-hidden
         "
       >
-        {/* CLOSE BUTTON */}
+        {/* CLOSE */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 z-50 bg-black/60 backdrop-blur-sm rounded-full p-2 text-white/80 hover:text-white hover:bg-black/80 transition"
@@ -49,7 +45,8 @@ const ProductDetailModal = ({ product, open, onClose }: Props) => {
           <X className="w-5 h-5" />
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
+        {/* CONTENT */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 h-full min-h-0">
 
           {/* IMAGE */}
           <div className="relative w-full h-[220px] sm:h-[300px] lg:h-full">
@@ -65,12 +62,12 @@ const ProductDetailModal = ({ product, open, onClose }: Props) => {
           </div>
 
           {/* INFO */}
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full min-h-0">
 
-            {/* SCROLLABLE CONTENT */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 space-y-4">
+            {/* SCROLLABLE INFO */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 space-y-4">
 
-              <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
+              <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight pr-10 lg:pr-0">
                 {product.name}
               </h2>
 
@@ -110,8 +107,18 @@ const ProductDetailModal = ({ product, open, onClose }: Props) => {
               </p>
             </div>
 
-            {/* CTA FIXED */}
-            <div className="border-t border-white/10 p-4 sm:p-5 bg-neutral-950">
+            {/* CTA STICKY */}
+            <div
+              className="
+                sticky
+                bottom-0
+                z-40
+                border-t
+                border-white/10
+                p-4 sm:p-5
+                bg-neutral-950
+              "
+            >
               <Button
                 disabled={!product.inStock || inCart}
                 onClick={() => addToCart(product)}

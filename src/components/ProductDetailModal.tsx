@@ -49,10 +49,10 @@ const ProductDetailModal = ({ product, open, onClose }: Props) => {
           <X className="w-5 h-5" />
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 overflow-y-auto lg:overflow-hidden h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 h-full max-h-[90vh] sm:max-h-[95vh]">
 
           {/* IMAGE */}
-          <div className="relative w-full h-[240px] sm:h-[320px] lg:h-full flex-shrink-0">
+          <div className="relative w-full h-[200px] sm:h-[280px] lg:h-full flex-shrink-0">
             <motion.img
               src={product.image}
               alt={product.name}
@@ -67,10 +67,10 @@ const ProductDetailModal = ({ product, open, onClose }: Props) => {
           </div>
 
           {/* INFO */}
-          <div className="flex flex-col justify-between px-5 py-5 sm:px-8 sm:py-8 lg:px-10 lg:py-12 lg:overflow-y-auto">
+          <div className="flex flex-col px-5 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 overflow-y-auto max-h-[calc(90vh-200px)] sm:max-h-[calc(95vh-280px)] lg:max-h-full">
 
             {/* TOP */}
-            <div className="space-y-4 lg:space-y-6">
+            <div className="space-y-3 sm:space-y-4 lg:space-y-5 flex-1 pb-4">
 
               <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight leading-tight pr-8 lg:pr-0">
                 {product.name}
@@ -113,13 +113,11 @@ const ProductDetailModal = ({ product, open, onClose }: Props) => {
             </div>
 
             {/* CTA */}
-            <div className="pt-5 lg:pt-6 sticky bottom-0 bg-neutral-950 lg:bg-transparent pb-1 lg:pb-0">
+            <div className="pt-4 border-t border-white/10 mt-auto flex-shrink-0">
               <Button
                 disabled={!product.inStock || inCart}
                 onClick={() => {
                   addToCart(product)
-                  // Optional: close modal after adding to cart
-                  // setTimeout(() => onClose(), 300)
                 }}
                 size="lg"
                 variant={inCart ? "outline" : "default"}

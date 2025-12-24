@@ -52,7 +52,7 @@ const ProductCard = React.forwardRef<HTMLElement, ProductCardProps>(
     }
 
     return (
-        <motion.article
+      <motion.article
         ref={ref}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -73,7 +73,7 @@ const ProductCard = React.forwardRef<HTMLElement, ProductCardProps>(
         </div>
 
         {/* CONTENT */}
-        <div className="p-4 flex flex-col gap-3">
+        <div className="p-4 flex flex-col gap-3 flex-1">
           {/* TITLE + STOCK */}
           <div className="flex items-start justify-between gap-3">
             <h3 className="font-semibold text-base leading-snug line-clamp-2">
@@ -121,7 +121,7 @@ const ProductCard = React.forwardRef<HTMLElement, ProductCardProps>(
           <motion.div
             animate={inCart ? { scale: [1, 1.05, 1] } : { scale: 1 }}
             transition={{ duration: 0.25 }}
-            className="pt-2"
+            className="pt-2 mt-auto"
           >
             <Button
               onClick={handleAdd}

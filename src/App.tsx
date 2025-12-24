@@ -20,7 +20,6 @@ const queryClient = new QueryClient();
 const App = () => {
   const navigate = useNavigate();
 
-  // 🔁 FIX GitHub Pages SPA redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const redirect = params.get("redirect");

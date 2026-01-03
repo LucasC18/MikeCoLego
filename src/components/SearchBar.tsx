@@ -42,7 +42,7 @@ const SearchBar = ({ value, onChange }: SearchBarProps) => {
 
       <Input
         type="text"
-        placeholder="Buscar sets de LEGO..."
+        placeholder="Buscar personajes..."
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
         aria-label="Buscar productos LEGO"

@@ -67,12 +67,12 @@ const Home = () => {
             </div>
 
             <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-bold mb-6">
-              <span className="text-foreground">Mike</span>
-              <span className="text-gradient">&Co</span>
+              <span className="text-foreground">Jedi</span>
+              <span className="text-gradient">Collector71</span>
             </h1>
 
             <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10">
-              Explorá nuestra colección de sets LEGO. Agregá los que te
+              Explorá nuestra colección de PERSONAJES. Agregá los que te
               interesen y consultá directamente por WhatsApp.
             </p>
 
@@ -114,11 +114,11 @@ const Home = () => {
             viewport={{ once: true }}
             className="font-display text-3xl md:text-4xl font-bold mb-4"
           >
-            <span className="text-foreground">Productos </span>
+            <span className="text-foreground">Personajes </span>
             <span className="text-gradient">Destacados</span>
           </motion.h2>
           <p className="text-muted-foreground">
-            Los sets más populares de nuestra colección
+            Los PERSONAJES más populares de nuestra colección
           </p>
         </div>
 

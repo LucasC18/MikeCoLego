@@ -37,11 +37,11 @@ const Footer = () => {
             <div className="space-y-5">
               <a href="/" className="inline-block group">
                 <h3 className="font-display text-2xl font-bold transition-all">
-                  Mike<span className="text-gradient group-hover:opacity-80 transition-opacity">Co</span>
+                  Jedi<span className="text-gradient group-hover:opacity-80 transition-opacity">Collector71</span>
                 </h3>
               </a>
               <p className="text-sm leading-relaxed text-muted-foreground max-w-sm">
-                Tienda de exhibición especializada en sets LEGO únicos y exclusivos. 
+                Tienda de exhibición especializada en personajes exclusivos. 
                 Explorá nuestra colección y consultá disponibilidad directamente.
               </p>
             </div>
@@ -98,17 +98,6 @@ const Footer = () => {
                     </span>
                   </a>
                 )}
-
-                <a 
-                  href="mailto:info@mikeco.com" 
-                  className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors duration-200 group"
-                >
-                  <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 group-hover:text-primary transition-colors" />
-                  <span className="relative">
-                    info@mikeco.com
-                    <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-primary transition-all duration-200 group-hover:w-full" />
-                  </span>
-                </a>
               </div>
             </div>
           </div>
@@ -119,10 +108,7 @@ const Footer = () => {
           <div className="container mx-auto px-6 lg:px-8 py-6">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
               <p className="text-center sm:text-left">
-                © {currentYear} MikeCo. Todos los derechos reservados.
-              </p>
-              <p className="text-center sm:text-right">
-                Tienda de exhibición LEGO
+                © {currentYear} JediCollector71. Todos los derechos reservados.
               </p>
             </div>
           </div>

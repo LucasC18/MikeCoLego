@@ -16,12 +16,11 @@ const About = () => {
         >
           <h1 className="font-display text-4xl md:text-5xl font-bold">
             <span className="text-foreground">Sobre </span>
-            <span className="text-gradient">Mike&Co</span>
+            <span className="text-gradient">JediCollector71</span>
           </h1>
 
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Somos una tienda de exhibición dedicada al universo LEGO®, enfocada
-            en sets originales, piezas sueltas y productos de colección.
+            Somos una tienda dedicada al universo de personajes de series y peliculas.
           </p>
         </motion.section>
 
@@ -39,7 +38,7 @@ const About = () => {
             </h2>
 
             <p className="text-muted-foreground">
-              En Mike&Co presentamos una curaduría de sets LEGO organizados por
+              En JediCollector71 presentamos un universo personajes organizados por
               temáticas como Star Wars, Harry Potter, Marvel, Technic y más.
               Nuestro objetivo es que puedas explorar, comparar y descubrir
               productos de forma clara y visual.
@@ -68,12 +67,6 @@ const About = () => {
               <li>Respondemos de forma personalizada.</li>
             </ul>
           </div>
-
-          {/* DISCLAIMER */}
-          <p className="text-muted-foreground text-xs text-center max-w-2xl mx-auto">
-            LEGO® es una marca registrada de The LEGO Group. Mike&Co no está
-            afiliado ni patrocinado por The LEGO Group.
-          </p>
         </motion.section>
       </main>
     </div>

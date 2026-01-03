@@ -35,9 +35,9 @@ const Navbar = ({ onCartClick }: NavbarProps) => {
               whileHover={{ scale: 1.02 }}
             >
               <h1 className="font-display text-xl md:text-2xl font-bold neon-text">
-                Mike
+                Jedi
                 <span className="text-secondary neon-text-magenta">
-                  &Co
+                  Collector71
                 </span>
               </h1>
             </motion.div>

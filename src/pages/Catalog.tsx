@@ -78,7 +78,7 @@ const Catalog = () => {
             <span className="text-gradient">Completo</span>
           </h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Explorá toda nuestra colección de sets LEGO. Usá los filtros para
+            Explorá toda nuestra colección de personajes. Usá los filtros para
             encontrar exactamente lo que buscás.
           </p>
         </motion.div>

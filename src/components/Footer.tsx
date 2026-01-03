@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Mail, MapPin, Phone } from "lucide-react";
 
 /* ================================
@@ -35,11 +36,11 @@ const Footer = () => {
             
             {/* Brand Section */}
             <div className="space-y-5">
-              <a href="/" className="inline-block group">
+              <Link to="/" className="inline-block group">
                 <h3 className="font-display text-2xl font-bold transition-all">
                   Jedi<span className="text-gradient group-hover:opacity-80 transition-opacity">Collector71</span>
                 </h3>
-              </a>
+              </Link>
               <p className="text-sm leading-relaxed text-muted-foreground max-w-sm">
                 Tienda de exhibición especializada en personajes exclusivos. 
                 Explorá nuestra colección y consultá disponibilidad directamente.
@@ -55,15 +56,15 @@ const Footer = () => {
                 <ul className="space-y-3">
                   {navigationLinks.map((link) => (
                     <li key={link.path}>
-                      <a
-                        href={link.path}
+                      <Link
+                        to={link.path}
                         className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200 inline-flex items-center group"
                       >
                         <span className="relative">
                           {link.name}
                           <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-primary transition-all duration-200 group-hover:w-full" />
                         </span>
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,9 @@ import {
   Package,
   AlertCircle,
   CheckCircle,
+  Search,
+  Filter,
+  X,
 } from "lucide-react";
 
 import {
@@ -110,21 +113,21 @@ function mapAdminProducts(
 ): AdminProduct[] {
   return items.map((p) => {
     // Debug: ver qué trae la API
-    console.log('Product from API:', {
+    console.log("Product from API:", {
       id: p.id,
       name: p.name,
       categoryId: p.categoryId,
-      categoryName: p.categoryName
+      categoryName: p.categoryName,
     });
-    
+
     // Primero intentar con categoryName de la API
     let category = p.categoryName ?? undefined;
-    
+
     // Si no existe o es null, buscar por categoryId
     if (!category && p.categoryId) {
       category = categories.find((c) => c.id === p.categoryId)?.name;
     }
-    
+
     // Fallback
     if (!category) {
       category = "Sin categoría";
@@ -152,6 +155,33 @@ function getErrorMessage(err: unknown): string {
   return "Error inesperado";
 }
 
+/**
+ * Trae TODOS los productos paginando.
+ * Asume que la API usa ?page= &limit=.
+ * Si tu backend usa otro esquema (offset/cursor), se cambia acá sin tocar el resto.
+ */
+async function fetchAllAdminProducts(): Promise<ProductApiDTO[]> {
+  const all: ProductApiDTO[] = [];
+  let page = 1;
+  const limit = 50;
+
+  while (true) {
+    const res = await apiFetch<{ items: ProductApiDTO[] }>(
+      `/api/v1/admin/products?page=${page}&limit=${limit}`,
+      { auth: true }
+    );
+
+    all.push(...res.items);
+
+    // Si vino menos que el límite, no hay más páginas
+    if (res.items.length < limit) break;
+
+    page++;
+  }
+
+  return all;
+}
+
 const Admin = () => {
   const { isAuthenticated, logout } = useAuth();
   const { toast } = useToast();
@@ -162,11 +192,33 @@ const Admin = () => {
   const [editing, setEditing] = useState<AdminProduct | null>(null);
   const [form, setForm] = useState<ProductFormState>(EMPTY_FORM);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<AdminProduct | null>(null);
+  const [productToDelete, setProductToDelete] =
+    useState<AdminProduct | null>(null);
+
+  // 🔎 Buscador + filtro
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   const totalProducts = products.length;
   const inStockProducts = products.filter((p) => p.inStock).length;
   const outOfStockProducts = products.filter((p) => !p.inStock).length;
+
+  const filteredProducts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    return products.filter((p) => {
+      const matchesSearch =
+        q.length === 0 ||
+        p.name.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        (p.category ?? "").toLowerCase().includes(q);
+
+      const matchesCategory =
+        categoryFilter === "all" || p.category === categoryFilter;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, search, categoryFilter]);
 
   /* ======================= LOAD ======================= */
   useEffect(() => {
@@ -177,12 +229,9 @@ const Admin = () => {
         const categoriesRes = await apiFetch<Category[]>("/api/v1/categories");
         setCategories(categoriesRes);
 
-        const productsRes = await apiFetch<{ items: ProductApiDTO[] }>(
-          "/api/v1/admin/products",
-          { auth: true }
-        );
-
-        setProducts(mapAdminProducts(productsRes.items, categoriesRes));
+        // ✅ trae TODO (no solo 50)
+        const items = await fetchAllAdminProducts();
+        setProducts(mapAdminProducts(items, categoriesRes));
       } catch (error: unknown) {
         toast({
           title: "Error",
@@ -203,7 +252,8 @@ const Admin = () => {
 
   const openEdit = (p: AdminProduct) => {
     setEditing(p);
-    const categoryId = p.categoryId ?? categories.find((c) => c.name === p.category)?.id ?? "";
+    const categoryId =
+      p.categoryId ?? categories.find((c) => c.name === p.category)?.id ?? "";
 
     setForm({
       name: p.name,
@@ -233,12 +283,16 @@ const Admin = () => {
       });
 
       setProducts((prev) =>
-        prev.map((p) => (p.id === product.id ? { ...p, inStock: newInStock } : p))
+        prev.map((p) =>
+          p.id === product.id ? { ...p, inStock: newInStock } : p
+        )
       );
 
       toast({
         title: "Actualizado",
-        description: `${product.name} ahora está ${newInStock ? "disponible" : "sin stock"}`,
+        description: `${product.name} ahora está ${
+          newInStock ? "disponible" : "sin stock"
+        }`,
       });
     } catch (error: unknown) {
       toast({
@@ -335,16 +389,15 @@ const Admin = () => {
       setDialogOpen(false);
       setForm(EMPTY_FORM);
 
-      const res = await apiFetch<{ items: ProductApiDTO[] }>(
-        "/api/v1/admin/products",
-        { auth: true }
-      );
-
-      setProducts(mapAdminProducts(res.items, categories));
+      // ✅ recarga TODO (no solo 50)
+      const items = await fetchAllAdminProducts();
+      setProducts(mapAdminProducts(items, categories));
 
       toast({
         title: "Éxito",
-        description: editing ? "Producto actualizado correctamente" : "Producto creado correctamente",
+        description: editing
+          ? "Producto actualizado correctamente"
+          : "Producto creado correctamente",
       });
     } catch (error: unknown) {
       toast({
@@ -423,7 +476,9 @@ const Admin = () => {
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold text-white">Gestión de Productos</h2>
-            <p className="text-sm text-gray-400 mt-1">Administra tu inventario completo</p>
+            <p className="text-sm text-gray-400 mt-1">
+              Administra tu inventario completo
+            </p>
           </div>
           <Button
             onClick={openCreate}
@@ -432,6 +487,61 @@ const Admin = () => {
             <Plus className="w-4 h-4 mr-2" />
             Nuevo producto
           </Button>
+        </div>
+
+        {/* ✅ Buscador + filtro (solo se agrega esto, no cambia lo demás) */}
+        <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative">
+              <Search className="w-4 h-4 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input
+                placeholder="Buscar por nombre, categoría o descripción..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-gray-500 w-full sm:w-[380px]"
+              />
+              {search.trim().length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearch("")}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 hover:bg-white/10"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-white/40" />
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="bg-white/5 border-white/10 text-white w-full sm:w-64">
+                  <SelectValue placeholder="Filtrar categoría" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-white/10">
+                  <SelectItem value="all" className="text-white">
+                    Todas
+                  </SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.name} className="text-white">
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="text-sm text-gray-400">
+            Mostrando{" "}
+            <span className="text-white/80 font-medium">
+              {filteredProducts.length}
+            </span>{" "}
+            de{" "}
+            <span className="text-white/80 font-medium">{products.length}</span>
+          </div>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-black/20 backdrop-blur overflow-hidden shadow-2xl">
@@ -448,7 +558,7 @@ const Admin = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.length === 0 ? (
+              {filteredProducts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-16">
                     <div className="flex flex-col items-center gap-3">
@@ -457,17 +567,21 @@ const Admin = () => {
                       </div>
                       <div>
                         <p className="text-lg font-medium text-white/60">
-                          No hay productos aún
+                          {products.length === 0
+                            ? "No hay productos aún"
+                            : "No hay resultados"}
                         </p>
                         <p className="text-sm text-white/40 mt-1">
-                          Comienza agregando tu primer producto
+                          {products.length === 0
+                            ? "Comienza agregando tu primer producto"
+                            : "Probá cambiando la búsqueda o el filtro"}
                         </p>
                       </div>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                products.map((product) => (
+                filteredProducts.map((product) => (
                   <TableRow
                     key={product.id}
                     className="border-white/5 hover:bg-white/5 transition-colors"
@@ -567,7 +681,9 @@ const Admin = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Descripción</label>
+              <label className="text-sm font-medium text-gray-300">
+                Descripción
+              </label>
               <Textarea
                 placeholder="Describe el producto..."
                 value={form.description}
@@ -612,7 +728,9 @@ const Admin = () => {
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
                   <Switch
                     checked={form.inStock}
-                    onCheckedChange={(checked) => setForm({ ...form, inStock: checked })}
+                    onCheckedChange={(checked) =>
+                      setForm({ ...form, inStock: checked })
+                    }
                     className="data-[state=checked]:bg-emerald-500"
                   />
                   <span className="text-sm text-white">

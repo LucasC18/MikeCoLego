@@ -14,7 +14,7 @@ createRoot(document.getElementById("root")!).render(
     <AuthProvider>
       <ProductProvider>
         <CartProvider>
-          <BrowserRouter basename="/MikeCoLego">
+          <BrowserRouter basename="/JediCollector71">
             <App />
           </BrowserRouter>
         </CartProvider>

@@ -21,9 +21,7 @@ const Home = () => {
      Featured products
      ======================= */
   const featuredProducts = useMemo<Product[]>(() => {
-    return products
-      .filter((p) => p.inStock)
-      .slice(0, 4);
+    return products.filter((p) => p.inStock).slice(0, 4);
   }, [products]);
 
   const scrollToProducts = () => {
@@ -66,7 +64,7 @@ const Home = () => {
               </span>
             </div>
 
-            <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-bold mb-6">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold mb-6 px-4 sm:px-0">
               <span className="text-foreground">Jedi</span>
               <span className="text-gradient">Collector71</span>
             </h1>

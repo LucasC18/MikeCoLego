@@ -54,7 +54,6 @@ const Catalog = () => {
         ? prev.filter((c) => c !== category)
         : [...prev, category]
     );
-    setCurrentPage(1);
   };
 
   /* =======================
@@ -76,6 +75,11 @@ const Catalog = () => {
       return matchesSearch && matchesCategory && matchesStock;
     });
   }, [products, debouncedQuery, selectedCategories, showOnlyInStock]);
+
+  useEffect(() => {
+  setCurrentPage(1);
+}, [debouncedQuery, selectedCategories, showOnlyInStock]);
+
 
   /* =======================
      Pagination
@@ -134,12 +138,10 @@ const Catalog = () => {
      ======================= */
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setCurrentPage(1);
   };
 
   const handleStockFilterChange = (value: boolean) => {
     setShowOnlyInStock(value);
-    setCurrentPage(1);
   };
 
   return (
@@ -206,7 +208,6 @@ const Catalog = () => {
             setSearchQuery("");
             setSelectedCategories([]);
             setShowOnlyInStock(false);
-            setCurrentPage(1);
           }}
         />
 

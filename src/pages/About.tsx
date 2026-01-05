@@ -378,10 +378,6 @@ const About = () => {
       a: "Sí. Hacemos envíos a toda Argentina. Coordinamos la logística directamente por WhatsApp.",
     },
     {
-      q: "¿Los productos son originales?",
-      a: "Todos los productos son originales y verificados antes de ser publicados.",
-    },
-    {
       q: "¿Puedo reservar un producto?",
       a: "Sí. Podés reservar productos con una seña, sujeto a disponibilidad.",
     },
@@ -389,35 +385,32 @@ const About = () => {
       q: "¿Hacen descuentos por cantidad?",
       a: "En compras múltiples analizamos descuentos personalizados. Consultanos.",
     },
-    {
-      q: "¿En qué estado están los productos?",
-      a: "Indicamos claramente si el producto es nuevo, usado o armado.",
-    },
   ];
 
   /* Features */
-  const features = [
-    {
-      icon: Shield,
-      emoji: "🛡️",
-      title: "Productos auténticos",
-      description:
-        "Cada figura es revisada y validada antes de ser publicada en el catálogo.",
-    },
-    {
-      icon: MessageCircle,
-      emoji: "💬",
-      title: "Atención personalizada",
-      description:
-        "Respondemos todas tus consultas por WhatsApp de forma clara y directa.",
-    },
-    {
-      icon: Truck,
-      emoji: "🚚",
-      title: "Envíos seguros",
-      description: "Empaque cuidado, seguimiento y envío a todo el país.",
-    },
-  ];
+const features = [
+  {
+    icon: MessageCircle,
+    emoji: "💬",
+    title: "Atención personalizada",
+    description:
+      "Respondemos todas tus consultas por WhatsApp de forma clara y directa.",
+  },
+  {
+    icon: Truck,
+    emoji: "🚚",
+    title: "Envíos seguros",
+    description: "Empaque cuidado, seguimiento y envío a todo el país.",
+  },
+  {
+    icon: Shield,
+    emoji: "🛡️",
+    title: "Compra con confianza",
+    description:
+      "Información clara, stock real y acompañamiento en todo el proceso.",
+  },
+];
+
 
   /* Testimonials */
   const testimonials = [

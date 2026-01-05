@@ -7,8 +7,11 @@ import ProductGrid from "@/components/ProductGrid";
 import CartDrawer from "@/components/CartDrawer";
 import { useProducts } from "@/context/ProductContext";
 import { Product } from "@/types/product";
+import { useSearchParams } from "react-router-dom";
 
 const PRODUCTS_PER_PAGE = 24;
+
+
 
 // Hook personalizado para detectar móvil (para optimizaciones)
 const useIsMobile = () => {
@@ -29,7 +32,12 @@ const Catalog = () => {
   const [showOnlyInStock, setShowOnlyInStock] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const isMobile = useIsMobile(); // Detectar móvil para ajustes
+  const isMobile = useIsMobile(); // Detectar móvil para ajustesÇ
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const categoryFromUrl = searchParams.get("category");
+    
+
 
   /* =======================
      Products from context
@@ -60,14 +68,27 @@ const Catalog = () => {
   /* =======================
      Category toggle (memoized)
      ======================= */
-  const handleCategoryToggle = useCallback((category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
-    console.log(`Categoría toggled: ${category}`); // Log para debug
-  }, []);
+const handleCategoryToggle = useCallback((category: string) => {
+  setSelectedCategories((prev) =>
+    prev.includes(category)
+      ? prev.filter((c) => c !== category)
+      : [...prev, category]
+  );
+
+  // 🔥 limpiar la URL cuando el usuario interactúa manualmente
+  setSearchParams({});
+
+  console.log(`Categoría toggled: ${category}`);
+}, [setSearchParams]);
+
+
+    useEffect(() => {
+  if (!categoryFromUrl) return;
+
+  setSelectedCategories([categoryFromUrl]);
+  setCurrentPage(1);
+}, [categoryFromUrl]);
+
 
   /* =======================
      Filtered products (optimized with error handling)

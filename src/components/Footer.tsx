@@ -85,20 +85,6 @@ const Footer = () => {
                   </span>
                 </div>
 
-                {WHATSAPP_PHONE && (
-                  <a 
-                    href={`https://wa.me/${WHATSAPP_PHONE}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-3 text-sm text-muted-foreground hover:text-primary transition-colors duration-200 group"
-                  >
-                    <Phone className="w-4 h-4 mt-0.5 flex-shrink-0 group-hover:text-primary transition-colors" />
-                    <span className="relative">
-                      WhatsApp
-                      <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-primary transition-all duration-200 group-hover:w-full" />
-                    </span>
-                  </a>
-                )}
               </div>
             </div>
           </div>

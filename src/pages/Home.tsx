@@ -1,147 +1,243 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import SearchBar from "@/components/SearchBar";
+import Filters from "@/components/Filters";
 import ProductGrid from "@/components/ProductGrid";
 import CartDrawer from "@/components/CartDrawer";
 import { useProducts } from "@/context/ProductContext";
-import { Sparkles, ChevronDown, ArrowRight } from "lucide-react";
-import heroImage from "@/assets/hero-starwars.jpg";
 import { Product } from "@/types/product";
 
-const Home = () => {
+const Catalog = () => {
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showOnlyInStock, setShowOnlyInStock] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PRODUCTS_PER_PAGE = 24;
 
   /* =======================
-     Products
+     Products from context
      ======================= */
   const { products, isLoading } = useProducts();
 
   /* =======================
-     Featured products
+     Categories (dynamic)
      ======================= */
-  const featuredProducts = useMemo<Product[]>(() => {
-    return products.filter((p) => p.inStock).slice(0, 4);
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => {
+      if (p.category) set.add(p.category);
+    });
+    return Array.from(set);
   }, [products]);
 
-  const scrollToProducts = () => {
-    document
-      .getElementById("destacados")
-      ?.scrollIntoView({ behavior: "smooth" });
+  /* =======================
+     Category toggle
+     ======================= */
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    );
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  /* =======================
+     Filtered products
+     ======================= */
+  const filteredProducts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return products.filter((product: Product) => {
+      const name = product.name.toLowerCase();
+      const category = product.category;
+      const inStock = product.inStock;
+
+      const matchesSearch = query === "" || name.includes(query);
+      const matchesCategory =
+        selectedCategories.length === 0 ||
+        selectedCategories.includes(category);
+      const matchesStock = !showOnlyInStock || inStock;
+
+      return matchesSearch && matchesCategory && matchesStock;
+    });
+  }, [products, searchQuery, selectedCategories, showOnlyInStock]);
+
+  /* =======================
+     Pagination
+     ======================= */
+  const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+    return filteredProducts.slice(startIndex, startIndex + PRODUCTS_PER_PAGE);
+  }, [filteredProducts, currentPage]);
+
+  // Reset page when filters change
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const handleStockFilterChange = (value: boolean) => {
+    setShowOnlyInStock(value);
+    setCurrentPage(1);
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar onCartClick={() => setIsCartOpen(true)} />
 
-      {/* Hero */}
-      <section className="relative h-screen overflow-hidden">
+      <main className="container mx-auto px-4 pt-28 pb-20 bg-grid min-h-screen">
+        {/* Header */}
         <motion.div
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          className="absolute inset-0"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
         >
-          <img
-            src={heroImage}
-            alt="JediCollector71 Hero"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/80" />
+          <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
+            <span className="text-foreground">Catálogo </span>
+            <span className="text-gradient">Completo</span>
+          </h1>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Explorá toda nuestra colección de personajes. Usá los filtros para
+            encontrar exactamente lo que buscás.
+          </p>
         </motion.div>
 
-        <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 glass-card rounded-full mb-6">
-              <Sparkles className="w-4 h-4 text-secondary animate-pulse-glow" />
-              <span className="text-sm font-medium text-secondary">
-                Colección Exclusiva
-              </span>
-            </div>
+        {/* Search and Filters */}
+        <div className="space-y-6 mb-10">
+          <div className="flex justify-center">
+            <SearchBar value={searchQuery} onChange={handleSearchChange} />
+          </div>
 
-            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold mb-6 px-4 sm:px-0">
-              <span className="text-foreground">Jedi</span>
-              <span className="text-gradient">Collector71</span>
-            </h1>
-
-            <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10">
-              Explorá nuestra colección de PERSONAJES. Agregá los que te
-              interesen y consultá directamente por WhatsApp.
-            </p>
-
-            <motion.button
-              onClick={scrollToProducts}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-8 py-4 bg-primary text-primary-foreground font-display font-bold text-lg rounded-lg neon-glow hover:bg-primary/90 transition-colors"
-            >
-              Ver Destacados
-            </motion.button>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-            className="absolute bottom-8"
-          >
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="flex flex-col items-center gap-2 cursor-pointer"
-              onClick={scrollToProducts}
-            >
-              <span className="text-muted-foreground text-sm">Scroll</span>
-              <ChevronDown className="w-6 h-6 text-primary" />
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Featured */}
-      <main id="destacados" className="container mx-auto px-4 py-20 bg-grid">
-        <div className="text-center mb-12">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="font-display text-3xl md:text-4xl font-bold mb-4"
-          >
-            <span className="text-foreground">Personajes </span>
-            <span className="text-gradient">Destacados</span>
-          </motion.h2>
-          <p className="text-muted-foreground">
-            Los PERSONAJES más populares de nuestra colección
-          </p>
+          <Filters
+            selectedCategories={selectedCategories}
+            onCategoryToggle={handleCategoryToggle}
+            showOnlyInStock={showOnlyInStock}
+            onStockFilterChange={handleStockFilterChange}
+            categories={categories}
+          />
         </div>
 
-        {isLoading ? (
-          <p className="text-center text-muted-foreground">
-            Cargando productos...
-          </p>
-        ) : (
-          <ProductGrid products={featuredProducts} />
-        )}
-
+        {/* Results count */}
         <motion.div
           initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="flex justify-center mt-12"
+          animate={{ opacity: 1 }}
+          className="mb-6"
         >
-          <Link
-            to="/catalogo"
-            className="inline-flex items-center gap-2 px-8 py-4 glass-card neon-border rounded-lg font-display font-semibold text-primary hover-glow transition-all group"
-          >
-            Ver Catálogo Completo
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </Link>
+          <p className="text-muted-foreground text-sm">
+            {isLoading ? (
+              "Cargando productos..."
+            ) : (
+              <>
+                Mostrando{" "}
+                <span className="text-primary font-semibold">
+                  {filteredProducts.length}
+                </span>{" "}
+                de{" "}
+                <span className="text-primary font-semibold">
+                  {products.length}
+                </span>{" "}
+                productos
+              </>
+            )}
+          </p>
         </motion.div>
+
+        {/* Product Grid */}
+        <ProductGrid
+          products={paginatedProducts}
+          onClearFilters={() => {
+            setSearchQuery("");
+            setSelectedCategories([]);
+            setShowOnlyInStock(false);
+            setCurrentPage(1);
+          }}
+        />
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-12 flex flex-col items-center gap-4"
+          >
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Anterior
+              </button>
+
+              <div className="flex gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => {
+                    // Show first page, last page, current page, and pages around current
+                    const showPage =
+                      page === 1 ||
+                      page === totalPages ||
+                      Math.abs(page - currentPage) <= 1;
+
+                    const showEllipsis =
+                      (page === 2 && currentPage > 3) ||
+                      (page === totalPages - 1 &&
+                        currentPage < totalPages - 2);
+
+                    if (!showPage && !showEllipsis) return null;
+
+                    if (showEllipsis) {
+                      return (
+                        <span
+                          key={page}
+                          className="px-3 py-2 text-muted-foreground"
+                        >
+                          ...
+                        </span>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-4 py-2 rounded-lg border transition-colors ${
+                          currentPage === page
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border bg-background hover:bg-accent"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  }
+                )}
+              </div>
+
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Siguiente
+              </button>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </p>
+          </motion.div>
+        )}
       </main>
 
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
@@ -149,4 +245,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Catalog;

@@ -25,62 +25,63 @@ import {
 } from "lucide-react";
 
 /* =========================================================
-   Hook contador animado (FIX: re-animar cuando cambia "end",
-   evitar animar con end=0 y respetar reduceMotion)
+   Hook contador animado – FIX DEFINITIVO
+   ✔ Re-anima cuando cambia `end`
+   ✔ Funciona cuando products llegan async
+   ✔ Respeta reduceMotion
+   ✔ Sin efectos duplicados
 ========================================================= */
 const useCounter = (end: number, duration = 2, reduceMotion = false) => {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLDivElement | null>(null);
-  const isInView = useInView(ref, { once: true, margin: "-60px" });
 
-  const lastEndRef = useRef<number | null>(null);
-  const rafRef = useRef<number>(0);
+  const isInView = useInView(ref, { margin: "-60px" });
+
+  const rafRef = useRef<number | null>(null);
   const startRef = useRef<number | null>(null);
+  const lastEndRef = useRef<number | null>(null);
 
   useEffect(() => {
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    // Si reduceMotion: set directo cuando sea visible
     if (!isInView) return;
 
-    // Evitar animar cuando end no es válido
-    const safeEnd = Number.isFinite(end) ? Math.max(0, Math.floor(end)) : 0;
+    const safeEnd = Number.isFinite(end)
+      ? Math.max(0, Math.floor(end))
+      : 0;
 
-    // Si no cambia, no hagas nada
-    if (lastEndRef.current === safeEnd) return;
+    // si no cambió el valor objetivo, no re-animar
+    if (lastEndRef.current === safeEnd) {
+      if (reduceMotion) setCount(safeEnd);
+      return;
+    }
 
     lastEndRef.current = safeEnd;
 
+    // reduce motion → set directo
     if (reduceMotion) {
       setCount(safeEnd);
       return;
     }
 
-    // Cancelar animación previa si existía
+    // cancelar animación previa
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
     startRef.current = null;
-
-    const from = count; // partir del valor actual (no cambia UX, pero evita saltos raros)
+    const from = count;
     const to = safeEnd;
 
-    // Si no hay cambio real
     if (from === to) {
       setCount(to);
       return;
     }
 
-    const animate = (t: number) => {
-      if (startRef.current == null) startRef.current = t;
-      const elapsed = t - (startRef.current ?? t);
+    const animate = (time: number) => {
+      if (startRef.current === null) startRef.current = time;
+
+      const elapsed = time - startRef.current;
       const progress = Math.min(elapsed / (duration * 1000), 1);
 
       const next = Math.floor(from + (to - from) * progress);
-      setCount((prev) => (prev === next ? prev : next));
+      setCount(next);
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(animate);
@@ -92,14 +93,11 @@ const useCounter = (end: number, duration = 2, reduceMotion = false) => {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [end, duration, isInView, reduceMotion]);
-
-  // Si products llega después (end pasa de 0 a N), y ya estás inView,
-  // este efecto se encargará de re-animar correctamente.
 
   return { count, ref };
 };
+
 
 /* =========================================================
    Background decor
@@ -495,7 +493,7 @@ const About = () => {
   /* Testimonials */
   const testimonials = [
     {
-      name: "Lucas M.",
+      name: "Tomas M.",
       role: "Coleccionista",
       emoji: "🧑‍🚀",
       text: "La atención es excelente y los productos llegan impecables. Totalmente recomendado.",

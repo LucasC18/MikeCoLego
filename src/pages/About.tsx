@@ -191,77 +191,6 @@ const StatCard = ({
   );
 };
 
-/* =========================================================
-   Category Card
-========================================================= */
-const CategoryCard = ({
-  name,
-  count,
-  emoji,
-  onClick,
-}: {
-  name: string;
-  count: number;
-  emoji: string;
-  onClick: () => void;
-}) => (
-  <motion.div
-    role="button"
-    tabIndex={0}
-    aria-label={`Ver categoría ${name}`}
-    onClick={onClick}
-    onKeyDown={(e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        onClick();
-      }
-    }}
-    whileHover={{ y: -10, scale: 1.08 }}
-    whileTap={{ scale: 0.95 }}
-    className="glass-card rounded-2xl p-8 cursor-pointer text-center space-y-4 relative overflow-hidden group"
-  >
-    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-      <motion.div
-        className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary/30 rounded-full"
-        animate={{ y: [0, -20, 0], opacity: [0, 1, 0] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      />
-      <motion.div
-        className="absolute top-1/2 right-1/3 w-1.5 h-1.5 bg-primary/40 rounded-full"
-        animate={{ y: [0, -15, 0], opacity: [0, 1, 0] }}
-        transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-      />
-      <motion.div
-        className="absolute bottom-1/4 left-1/2 w-1 h-1 bg-primary/30 rounded-full"
-        animate={{ y: [0, -12, 0], opacity: [0, 1, 0] }}
-        transition={{ duration: 2.2, repeat: Infinity, delay: 0.2 }}
-      />
-    </div>
-
-    <div className="relative z-10 space-y-4">
-      <motion.div
-        className="text-5xl"
-        whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.2 }}
-        transition={{ duration: 0.5 }}
-      >
-        {emoji}
-      </motion.div>
-
-      <h3 className="font-display font-bold text-xl group-hover:text-primary transition-colors">
-        {name}
-      </h3>
-
-      <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-        <Package className="w-4 h-4" />
-        {count} productos
-      </p>
-
-      <span className="text-primary font-semibold text-sm">Ver categoría →</span>
-    </div>
-  </motion.div>
-);
 
 /* =========================================================
    FAQ Item
@@ -672,33 +601,6 @@ const About = () => {
               </div>
             </div>
           </motion.div>
-        </section>
-
-        {/* CATEGORÍAS */}
-        <section className="max-w-6xl mx-auto mb-32">
-          <SectionTitle
-            title="Explorá por categoría"
-            subtitle="Accedé directamente al catálogo filtrado"
-          />
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mt-12">
-            {categories.map((c, index) => (
-              <motion.div
-                key={c.name}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.08 }}
-              >
-                <CategoryCard
-                  name={c.name}
-                  count={c.count}
-                  emoji={c.emoji}
-                  onClick={() => goToCatalogWithCategory(c.name)}
-                />
-              </motion.div>
-            ))}
-          </div>
         </section>
 
         {/* TESTIMONIOS */}

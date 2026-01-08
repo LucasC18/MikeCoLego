@@ -207,29 +207,33 @@ const ProductDetail = () => {
 
       {/* Modal de imagen completa */}
       {isImageModalOpen && product && (
-        <div 
-          className="fixed inset-0 z-50 bg-background/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300"
-          onClick={() => setIsImageModalOpen(false)}
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4 z-10 hover:bg-primary/20 border border-primary/50 shadow-[0_0_20px_rgba(var(--primary),0.5)]"
-            onClick={() => setIsImageModalOpen(false)}
-          >
-            <X className="w-6 h-6" />
-          </Button>
-          
-          <div className="relative max-w-6xl w-full max-h-[90vh] glass-card rounded-2xl overflow-hidden border-2 border-primary/30 shadow-[0_0_60px_rgba(var(--primary),0.6)]">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-full object-contain p-8"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
+  <div
+    className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+    onClick={() => setIsImageModalOpen(false)}
+  >
+    <Button
+      variant="ghost"
+      size="icon"
+      className="absolute top-4 right-4 z-10 text-white hover:bg-white/10"
+      onClick={() => setIsImageModalOpen(false)}
+    >
+      <X className="w-6 h-6" />
+    </Button>
+
+    <div
+      className="relative max-w-[90vw] max-h-[90vh]"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <img
+        src={product.image}
+        alt={product.name}
+        className="max-w-full max-h-[90vh] object-contain"
+        draggable={false}
+      />
+    </div>
+  </div>
+)}
+
 
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>

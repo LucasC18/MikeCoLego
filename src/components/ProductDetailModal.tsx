@@ -100,7 +100,10 @@ const ProductDetailModal = memo(({ product, open, onClose }: Props) => {
               overflow-hidden bg-neutral-900
               cursor-pointer group
             "
-            onClick={toggleFullImage}
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleFullImage()
+            }}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
@@ -287,15 +290,18 @@ const ProductDetailModal = memo(({ product, open, onClose }: Props) => {
         {/* Lightbox - Imagen en pantalla completa */}
         {showFullImage && !imageError && (
           <div
-            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={toggleFullImage}
             role="dialog"
             aria-label="Imagen en pantalla completa"
           >
             {/* Botón cerrar */}
             <button
-              onClick={toggleFullImage}
-              className="absolute top-4 right-4 z-10 bg-black/70 backdrop-blur-sm rounded-full p-3 text-white/90 hover:text-white hover:bg-black/90 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleFullImage()
+              }}
+              className="absolute top-4 right-4 z-10 bg-black/70 backdrop-blur-sm rounded-full p-3 text-white/90 hover:text-white hover:bg-black/90 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 touch-manipulation"
               aria-label="Cerrar imagen completa"
             >
               <X className="w-6 h-6" />

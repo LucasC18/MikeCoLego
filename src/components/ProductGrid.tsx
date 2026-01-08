@@ -1,20 +1,16 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { PackageSearch } from "lucide-react";
+import { motion } from "framer-motion"
+import { PackageSearch } from "lucide-react"
 
-import { Product } from "@/types/product";
-import ProductCard from "./ProductCard";
-import ProductDetailModal from "./ProductDetailModal";
-import { Button } from "@/components/ui/button";
+import { Product } from "@/types/product"
+import ProductCard from "./ProductCard"
+import { Button } from "@/components/ui/button"
 
 interface ProductGridProps {
-  products: Product[];
-  onClearFilters?: () => void;
+  products: Product[]
+  onClearFilters?: () => void
 }
 
 const ProductGrid = ({ products, onClearFilters }: ProductGridProps) => {
-  const [selected, setSelected] = useState<Product | null>(null);
-
   /* ===============================
      EMPTY STATE
   =============================== */
@@ -41,59 +37,44 @@ const ProductGrid = ({ products, onClearFilters }: ProductGridProps) => {
           </Button>
         )}
       </motion.div>
-    );
+    )
   }
 
   /* ===============================
-     GRID CORREGIDO
+     GRID FINAL (SIN MODAL)
   =============================== */
   return (
-    <>
-      <div
-        className="
-          grid
-          grid-cols-1
-          sm:grid-cols-2
-          lg:grid-cols-3
-          xl:grid-cols-4
-          gap-6
-          w-full
-          px-4
-          sm:px-0
-          items-stretch
-        "
-      >
-        {products.map((product, index) => (
-          <motion.div
-            key={product.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.25,
-              delay: index * 0.04,
-              ease: "easeOut",
-            }}
-            className="h-full"
-          >
-            <ProductCard
-              product={product}
-              index={index}
-              onOpenDetail={setSelected}
-            />
-          </motion.div>
-        ))}
-      </div>
+    <div
+      className="
+        grid
+        grid-cols-1
+        sm:grid-cols-2
+        lg:grid-cols-3
+        xl:grid-cols-4
+        gap-6
+        w-full
+        px-4
+        sm:px-0
+        items-stretch
+      "
+    >
+      {products.map((product, index) => (
+        <motion.div
+          key={product.id}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.25,
+            delay: index * 0.04,
+            ease: "easeOut",
+          }}
+          className="h-full"
+        >
+          <ProductCard product={product} index={index} />
+        </motion.div>
+      ))}
+    </div>
+  )
+}
 
-      {/* ===============================
-          MODAL DETALLE
-      =============================== */}
-      <ProductDetailModal
-        product={selected}
-        open={!!selected}
-        onClose={() => setSelected(null)}
-      />
-    </>
-  );
-};
-
-export default ProductGrid;
+export default ProductGrid

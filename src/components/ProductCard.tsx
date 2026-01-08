@@ -7,6 +7,8 @@ import {
   PackageX,
   CheckCircle2,
 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+
 import { Product } from "@/types/product"
 import { useCart } from "@/context/CartContext"
 import { Button } from "@/components/ui/button"
@@ -16,17 +18,19 @@ import { useToast } from "@/hooks/use-toast"
 interface ProductCardProps {
   product: Product
   index: number
-  onOpenDetail?: (product: Product) => void
 }
 
 const ProductCard = React.forwardRef<HTMLElement, ProductCardProps>(
-  ({ product, index, onOpenDetail }, ref) => {
+  ({ product, index }, ref) => {
+    const navigate = useNavigate()
     const { addToCart, isInCart } = useCart()
     const { toast } = useToast()
+
     const inCart = isInCart(product.id)
 
     const handleAdd = (e: React.MouseEvent) => {
       e.stopPropagation()
+
       if (inCart || !product.inStock) return
 
       addToCart(product)
@@ -58,7 +62,7 @@ const ProductCard = React.forwardRef<HTMLElement, ProductCardProps>(
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05, duration: 0.35 }}
         whileHover={{ y: -6 }}
-        onClick={() => onOpenDetail?.(product)}
+        onClick={() => navigate(`/producto/${product.id}`)}
         className="group relative glass-card rounded-lg sm:rounded-xl overflow-hidden hover-glow cursor-pointer flex flex-col h-full"
       >
         {/* IMAGE */}

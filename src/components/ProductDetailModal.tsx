@@ -27,22 +27,33 @@ const ProductDetailModal = memo(({ product, open, onClose }: Props) => {
   const [showFullImage, setShowFullImage] = useState(false)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
 
-  /* ------------------ FIX CRÍTICO: reset al cambiar producto ------------------ */
+  /* ---------- RESET TOTAL AL CAMBIAR PRODUCTO (CRÍTICO) ---------- */
   useEffect(() => {
     setShowFullImage(false)
     setImageLoaded(false)
     setImageError(false)
+    setIsAddingToCart(false)
   }, [product?.id])
 
-  /* ------------------ Scroll lock SOLO para lightbox ------------------ */
+  /* ---------- BLOQUEO DE SCROLL (SAFE PARA iOS) ---------- */
   useEffect(() => {
-    document.body.style.overflow = showFullImage ? "hidden" : ""
+    if (!showFullImage) {
+      document.body.style.overflow = ""
+      return
+    }
+
+    document.body.style.overflow = "hidden"
+
+    const preventTouch = (e: TouchEvent) => e.preventDefault()
+    document.addEventListener("touchmove", preventTouch, { passive: false })
+
     return () => {
       document.body.style.overflow = ""
+      document.removeEventListener("touchmove", preventTouch)
     }
   }, [showFullImage])
 
-  /* ------------------ Escape para cerrar lightbox ------------------ */
+  /* ---------- ESC PARA DESKTOP ---------- */
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape" && showFullImage) {
@@ -53,7 +64,7 @@ const ProductDetailModal = memo(({ product, open, onClose }: Props) => {
     return () => window.removeEventListener("keydown", onEsc)
   }, [showFullImage])
 
-  /* ------------------ NO cerrar Dialog si el lightbox está abierto ------------------ */
+  /* ---------- NO CERRAR DIALOG SI LIGHTBOX ESTÁ ABIERTO ---------- */
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
       if (!newOpen && showFullImage) return
@@ -79,8 +90,15 @@ const ProductDetailModal = memo(({ product, open, onClose }: Props) => {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Dialog open={open} onOpenChange={handleOpenChange} modal>
         <DialogContent
+          /* FIX SAFARI iOS: bloquear eventos externos */
+          onPointerDownOutside={(e) => {
+            if (showFullImage) e.preventDefault()
+          }}
+          onInteractOutside={(e) => {
+            if (showFullImage) e.preventDefault()
+          }}
           className="
             w-[95vw] sm:w-[90vw] lg:w-[85vw]
             max-w-5xl max-h-[95vh]
@@ -101,7 +119,7 @@ const ProductDetailModal = memo(({ product, open, onClose }: Props) => {
           </button>
 
           <div className="flex flex-col lg:grid lg:grid-cols-2 lg:h-full">
-            {/* Imagen */}
+            {/* IMAGEN */}
             <div className="relative h-[40vh] lg:h-full bg-neutral-900 flex items-center justify-center">
               {!imageError ? (
                 <>
@@ -129,7 +147,10 @@ const ProductDetailModal = memo(({ product, open, onClose }: Props) => {
 
               {imageLoaded && !imageError && (
                 <button
-                  onClick={() => setShowFullImage(true)}
+                  onPointerDownCapture={(e) => {
+                    e.stopPropagation()
+                    setShowFullImage(true)
+                  }}
                   className="
                     absolute bottom-4 left-1/2 -translate-x-1/2
                     bg-black/80 text-white px-4 py-2 rounded-full
@@ -142,7 +163,7 @@ const ProductDetailModal = memo(({ product, open, onClose }: Props) => {
               )}
             </div>
 
-            {/* Info */}
+            {/* INFO */}
             <div className="flex flex-col flex-1">
               <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
                 <h2 className="text-3xl font-bold text-white">
@@ -204,17 +225,17 @@ const ProductDetailModal = memo(({ product, open, onClose }: Props) => {
         </DialogContent>
       </Dialog>
 
-      {/* LIGHTBOX AISLADO (NO TOCA EL DIALOG) */}
+      {/* LIGHTBOX AISLADO — SAFE iOS */}
       {showFullImage && (
         <div
           className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4"
-          onClick={(e) => {
+          onPointerDownCapture={(e) => {
             e.stopPropagation()
             setShowFullImage(false)
           }}
         >
           <button
-            onClick={(e) => {
+            onPointerDownCapture={(e) => {
               e.stopPropagation()
               setShowFullImage(false)
             }}
@@ -228,7 +249,7 @@ const ProductDetailModal = memo(({ product, open, onClose }: Props) => {
             src={product.image}
             alt={product.name}
             className="max-w-full max-h-full object-contain"
-            onClick={(e) => e.stopPropagation()}
+            onPointerDownCapture={(e) => e.stopPropagation()}
           />
         </div>
       )}

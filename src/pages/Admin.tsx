@@ -163,7 +163,7 @@ async function fetchAllAdminProducts(): Promise<ProductApiDTO[]> {
 
   while (true) {
     const res = await apiFetch<{ items: ProductApiDTO[] }>(
-      `/api/v1/admin/products?page=${page}&limit=${limit}`,
+      `/v1/admin/products?page=${page}&limit=${limit}`,
       { auth: true }
     );
 
@@ -224,7 +224,7 @@ const Admin = () => {
 
     async function loadData() {
       try {
-        const categoriesRes = await apiFetch<Category[]>("/api/v1/categories");
+        const categoriesRes = await apiFetch<Category[]>("/v1/categories");
         setCategories(categoriesRes);
 
         const items = await fetchAllAdminProducts();
@@ -277,7 +277,7 @@ const Admin = () => {
     try {
       const newInStock = !product.inStock;
 
-      await apiFetch(`/api/v1/admin/products/${product.id}`, {
+      await apiFetch(`/v1/admin/products/${product.id}`, {
         method: "PUT",
         auth: true,
         body: JSON.stringify({ inStock: newInStock }),
@@ -308,7 +308,7 @@ const Admin = () => {
     if (!productToDelete) return;
 
     try {
-      await apiFetch(`/api/v1/admin/products/${productToDelete.id}`, {
+      await apiFetch(`/v1/admin/products/${productToDelete.id}`, {
         method: "DELETE",
         auth: true,
       });
@@ -347,7 +347,7 @@ const Admin = () => {
 
       if (editing) {
         const updated = await apiFetch<ProductApiDTO>(
-          `/api/v1/admin/products/${editing.id}`,
+          `/v1/admin/products/${editing.id}`,
           {
             method: "PUT",
             auth: true,
@@ -363,7 +363,7 @@ const Admin = () => {
         );
         productId = updated.id;
       } else {
-        const created = await apiFetch<ProductApiDTO>("/api/v1/admin/products", {
+        const created = await apiFetch<ProductApiDTO>("/v1/admin/products", {
           method: "POST",
           auth: true,
           body: JSON.stringify({
@@ -382,7 +382,7 @@ const Admin = () => {
         const fd = new FormData();
         fd.append("image", form.imageFile);
 
-        await apiFetch(`/api/v1/admin/products/${productId}/image`, {
+        await apiFetch(`/v1/admin/products/${productId}/image`, {
           method: "POST",
           auth: true,
           body: fd,

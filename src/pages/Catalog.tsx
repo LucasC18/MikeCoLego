@@ -1,204 +1,224 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
-import SearchBar from "@/components/SearchBar";
-import Filters from "@/components/Filters";
-import ProductGrid from "@/components/ProductGrid";
-import CartDrawer from "@/components/CartDrawer";
-import { useProducts } from "@/context/ProductContext";
-import { Product } from "@/types/product";
-import { useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import Navbar from "@/components/Navbar"
+import SearchBar from "@/components/SearchBar"
+import Filters from "@/components/Filters"
+import ProductGrid from "@/components/ProductGrid"
+import CartDrawer from "@/components/CartDrawer"
+import { useProducts } from "@/context/ProductContext"
+import { Product } from "@/types/product"
+import { useSearchParams } from "react-router-dom"
 
-const PRODUCTS_PER_PAGE = 24;
+const PRODUCTS_PER_PAGE = 24
 
-// Hook personalizado para detectar móvil (para optimizaciones)
+// Hook optimizado para detectar móvil con matchMedia
 const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => 
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  )
+  
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-  return isMobile;
-};
+    const mediaQuery = window.matchMedia("(max-width: 767px)")
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches)
+    }
+    
+    handleChange(mediaQuery)
+    mediaQuery.addEventListener("change", handleChange)
+    return () => mediaQuery.removeEventListener("change", handleChange)
+  }, [])
+  
+  return isMobile
+}
 
 const Catalog = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [showOnlyInStock, setShowOnlyInStock] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [activeCollection, setActiveCollection] = useState<string>("Bloques"); // ⬅️ CAMBIADO: Estado inicial corregido para coincidir con las opciones disponibles
-  const isMobile = useIsMobile();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedQuery, setDebouncedQuery] = useState("")
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [showOnlyInStock, setShowOnlyInStock] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [isPending, startTransition] = useTransition()
 
-  const categoryFromUrl = searchParams.get("category");
-  const collectionFromUrl = searchParams.get("collection");
+  const isMobile = useIsMobile()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const categoryFromUrl = searchParams.get("category")
 
-  /* =======================
-     Products from context
-     ======================= */
-  const { products, isLoading } = useProducts();
+  const { products, isLoading } = useProducts()
 
   /* =======================
-     Debounce search (performance)
+     Debounce search mejorado con useTransition
      ======================= */
   useEffect(() => {
     const id = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 300);
-    return () => clearTimeout(id);
-  }, [searchQuery]);
+      startTransition(() => {
+        setDebouncedQuery(searchQuery)
+      })
+    }, 300)
+    return () => clearTimeout(id)
+  }, [searchQuery])
 
   /* =======================
-     Collection from URL (con validación)
-     ======================= */
-  useEffect(() => {
-    const validCollections = ["Bloques", "Personajes"];
-    if (collectionFromUrl && validCollections.includes(collectionFromUrl)) {
-      setActiveCollection(collectionFromUrl);
-      setSelectedCategories([]);
-      setCurrentPage(1);
-    }
-  }, [collectionFromUrl]);
-
-  /* =======================
-     Categories (dynamic, filtered by collection)
+     Categories (dinámicas, ordenadas y memoizadas)
      ======================= */
   const categories = useMemo(() => {
-    const set = new Set<string>();
-    products
-      .filter((p) => p.collection === activeCollection)
-      .forEach((p) => {
-        if (p.category) set.add(p.category);
-      });
-    return Array.from(set);
-  }, [products, activeCollection]);
+    const set = new Set<string>()
+    products.forEach((p) => {
+      if (p.category) set.add(p.category)
+    })
+    return Array.from(set).sort()
+  }, [products])
 
   /* =======================
-     Category toggle (memoized)
+     Category toggle optimizado
      ======================= */
-  const handleCategoryToggle = useCallback((category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
-
-    // limpiar la URL cuando el usuario interactúa manualmente
-    setSearchParams({});
-
-    console.log(`Categoría toggled: ${category}`);
-  }, [setSearchParams]);
-
-  useEffect(() => {
-    if (categoryFromUrl && categories.includes(categoryFromUrl)) {
-      setSelectedCategories([categoryFromUrl]);
-      setCurrentPage(1);
-    }
-  }, [categoryFromUrl, categories]); // ⬅️ AGREGADO: Dependencia en categories para validar
+  const handleCategoryToggle = useCallback(
+    (category: string) => {
+      startTransition(() => {
+        setSelectedCategories((prev) =>
+          prev.includes(category)
+            ? prev.filter((c) => c !== category)
+            : [...prev, category]
+        )
+        setCurrentPage(1)
+      })
+      setSearchParams({})
+    },
+    [setSearchParams]
+  )
 
   /* =======================
-     Filtered products (optimized with error handling + collection filter)
+     Clear filters mejorado
+     ======================= */
+  const handleClearFilters = useCallback(() => {
+    startTransition(() => {
+      setSearchQuery("")
+      setDebouncedQuery("")
+      setSelectedCategories([])
+      setShowOnlyInStock(false)
+      setCurrentPage(1)
+    })
+    setSearchParams({})
+  }, [setSearchParams])
+
+  /* =======================
+     Sincronizar categoría desde URL
+     ======================= */
+  useEffect(() => {
+    if (!categoryFromUrl || !categories.length) return
+    if (categories.includes(categoryFromUrl)) {
+      setSelectedCategories([categoryFromUrl])
+      setCurrentPage(1)
+    }
+  }, [categoryFromUrl, categories])
+
+  /* =======================
+     Filtrado de productos optimizado
      ======================= */
   const filteredProducts = useMemo(() => {
-    try {
-      const query = debouncedQuery.trim().toLowerCase();
-      return products.filter((product: Product) => {
-        if (!product || typeof product.name !== "string") return false;
-        const matchesCollection = product.collection === activeCollection;
-        const matchesSearch =
-          query === "" || product.name.toLowerCase().includes(query);
-        const matchesCategory =
-          selectedCategories.length === 0 ||
-          selectedCategories.includes(product.category || "");
-        const matchesStock = !showOnlyInStock || product.inStock;
-        return (
-          matchesCollection &&
-          matchesSearch &&
-          matchesCategory &&
-          matchesStock
-        );
-      });
-    } catch (error) {
-      console.error("Error filtrando productos:", error);
-      return [];
-    }
-  }, [products, debouncedQuery, selectedCategories, showOnlyInStock, activeCollection]);
+    const query = debouncedQuery.trim().toLowerCase()
+
+    return products.filter((product: Product) => {
+      if (!product?.name) return false
+
+      // Early returns para mejor performance
+      if (showOnlyInStock && !product.inStock) return false
+      if (selectedCategories.length > 0 && !selectedCategories.includes(product.category || "")) return false
+      if (query && !product.name.toLowerCase().includes(query)) return false
+
+      return true
+    })
+  }, [products, debouncedQuery, selectedCategories, showOnlyInStock])
 
   /* =======================
-     Reset page only if current page is invalid after filtering
+     Reset automático de página inválida
      ======================= */
   useEffect(() => {
-    if (currentPage > Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE)) {
-      setCurrentPage(1);
+    const maxPage = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE)
+    if (maxPage > 0 && currentPage > maxPage) {
+      setCurrentPage(1)
     }
-  }, [filteredProducts, currentPage]);
+  }, [filteredProducts.length, currentPage])
 
   /* =======================
-     Pagination
+     Paginación mejorada
      ======================= */
-  const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE))
 
   const paginatedProducts = useMemo(() => {
-    const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
-    return filteredProducts.slice(startIndex, startIndex + PRODUCTS_PER_PAGE);
-  }, [filteredProducts, currentPage]);
+    const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE
+    return filteredProducts.slice(startIndex, startIndex + PRODUCTS_PER_PAGE)
+  }, [filteredProducts, currentPage])
 
-  /* =======================
-     Generate page numbers for pagination
-     ======================= */
-  const generatePageNumbers = useCallback(() => {
-    const pages: (number | string)[] = [];
-    if (totalPages <= 5) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
+  const pageNumbers = useMemo(() => {
+    const pages: (number | string)[] = []
+
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i)
     } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push("...");
-      const start = Math.max(2, currentPage - 1);
-      const end = Math.min(totalPages - 1, currentPage + 1);
-      for (let i = start; i <= end; i++) pages.push(i);
-      if (currentPage < totalPages - 2) pages.push("...");
-      pages.push(totalPages);
+      pages.push(1)
+      
+      if (currentPage > 3) pages.push("...")
+      
+      const start = Math.max(2, currentPage - 1)
+      const end = Math.min(totalPages - 1, currentPage + 1)
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+      
+      if (currentPage < totalPages - 2) pages.push("...")
+      pages.push(totalPages)
     }
-    return pages;
-  }, [totalPages, currentPage]);
+
+    return pages
+  }, [totalPages, currentPage])
 
   /* =======================
-     Handlers (memoized)
+     Handlers de paginación con scroll suave
      ======================= */
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchQuery(value);
-  }, []);
-
-  const handleStockFilterChange = useCallback((value: boolean) => {
-    setShowOnlyInStock(value);
-  }, []);
-
   const handlePageChange = useCallback((page: number) => {
-    console.log(`Cambiando a página: ${page} (Móvil: ${isMobile})`);
-    setCurrentPage(page);
-  }, [isMobile]);
+    startTransition(() => {
+      setCurrentPage(page)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    })
+  }, [])
 
-  // Skeleton loader para móviles
+  const handleNextPage = useCallback(() => {
+    if (currentPage < totalPages) {
+      handlePageChange(currentPage + 1)
+    }
+  }, [currentPage, totalPages, handlePageChange])
+
+  const handlePrevPage = useCallback(() => {
+    if (currentPage > 1) {
+      handlePageChange(currentPage - 1)
+    }
+  }, [currentPage, handlePageChange])
+
+  /* =======================
+     Skeleton con animación escalonada
+     ======================= */
   const SkeletonGrid = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {Array.from({ length: PRODUCTS_PER_PAGE }).map((_, i) => (
-        <div key={i} className="animate-pulse bg-gray-200 h-64 rounded-lg"></div>
+        <motion.div
+          key={i}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: i * 0.03 }}
+          className="animate-pulse bg-gray-200 h-64 rounded-lg"
+        />
       ))}
     </div>
-  );
+  )
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar onCartClick={() => setIsCartOpen(true)} />
 
       <main className="container mx-auto px-4 pt-28 pb-20 bg-grid min-h-screen">
-        {/* Header (responsive) */}
+        {/* Header con contador animado */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -209,169 +229,119 @@ const Catalog = () => {
             <span className="text-foreground">Catálogo </span>
             <span className="text-gradient">Completo</span>
           </h1>
-          <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base">
-            Explorá toda nuestra colección de personajes. Usá los filtros para
-            encontrar exactamente lo que buscás.
-          </p>
+          
+          {/* Contador de productos con animación */}
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={filteredProducts.length}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="text-sm text-muted-foreground"
+            >
+              {filteredProducts.length} {filteredProducts.length === 1 ? 'producto' : 'productos'} 
+              {selectedCategories.length > 0 && ` en ${selectedCategories.join(', ')}`}
+            </motion.p>
+          </AnimatePresence>
         </motion.div>
 
-        {/* Collection Selector */}
-        <div className="flex justify-center gap-3 mb-8">
-          {["Bloques", "Personajes"].map((c) => (
-            <button
-              key={c}
-              onClick={() => {
-                setActiveCollection(c);
-                setSelectedCategories([]);
-                setSearchParams({ collection: c });
-              }}
-              className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${
-                activeCollection === c
-                  ? "bg-primary text-primary-foreground border-primary shadow-lg"
-                  : "bg-background border-border hover:bg-accent"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
-
-        {/* Search and Filters */}
-        <div className="space-y-4 sm:space-y-6 mb-8 sm:mb-10">
+        {/* Búsqueda y filtros */}
+        <div className="space-y-6 mb-10">
           <div className="flex justify-center">
-            <SearchBar value={searchQuery} onChange={handleSearchChange} />
+            <SearchBar value={searchQuery} onChange={setSearchQuery} />
           </div>
+          
           <Filters
             selectedCategories={selectedCategories}
             onCategoryToggle={handleCategoryToggle}
             showOnlyInStock={showOnlyInStock}
-            onStockFilterChange={handleStockFilterChange}
+            onStockFilterChange={(value) => {
+              startTransition(() => {
+                setShowOnlyInStock(value)
+                setCurrentPage(1)
+              })
+            }}
             categories={categories}
           />
         </div>
 
-        {/* Results count */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mb-6"
-        >
-          <p className="text-muted-foreground text-sm">
-            {isLoading ? (
-              "Cargando productos..."
-            ) : filteredProducts.length === 0 ? (
-              "No se encontraron productos. Intentá ajustar los filtros."
-            ) : (
-              <>
-                Mostrando{" "}
-                <span className="text-primary font-semibold">
-                  {filteredProducts.length}
-                </span>{" "}
-                de{" "}
-                <span className="text-primary font-semibold">
-                  {products.length}
-                </span>{" "}
-                productos
-              </>
-            )}
-          </p>
-        </motion.div>
+        {/* Indicador de carga en transición */}
+        {isPending && (
+          <div className="flex justify-center mb-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          </div>
+        )}
 
-        {/* Product Grid (con skeleton) */}
+        {/* Grid de productos */}
         {isLoading ? (
           <SkeletonGrid />
         ) : (
           <ProductGrid
             products={paginatedProducts}
-            onClearFilters={() => {
-              setSearchQuery("");
-              setSelectedCategories([]);
-              setShowOnlyInStock(false);
-              setCurrentPage(1);
-            }}
+            onClearFilters={handleClearFilters}
           />
         )}
 
-        {/* Pagination (responsive y táctil) */}
-        {totalPages > 1 && (
+        {/* Paginación mejorada con accesibilidad */}
+        {!isLoading && filteredProducts.length > PRODUCTS_PER_PAGE && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: isMobile ? 0.3 : 0.5 }}
-            className="mt-12 flex flex-col items-center gap-4"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12"
           >
-            <div className="flex flex-wrap items-center gap-2 justify-center">
-              <button
-                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg border border-border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
-                aria-label="Página anterior"
-              >
-                Anterior
-              </button>
+            <button
+              onClick={handlePrevPage}
+              disabled={currentPage === 1}
+              className="px-4 py-2 rounded-lg bg-card border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent transition-colors"
+              aria-label="Página anterior"
+            >
+              ← Anterior
+            </button>
 
-              <div className="flex gap-1 flex-wrap">
-                {generatePageNumbers().map((page, index) => {
-                  if (page === "...") {
-                    return (
-                      <span
-                        key={`ellipsis-${index}`}
-                        className="px-3 py-2 text-muted-foreground"
-                      >
-                        ...
-                      </span>
-                    );
-                  }
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page as number)}
-                      className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg border transition-colors touch-manipulation ${
-                        currentPage === page
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-border bg-background hover:bg-accent"
-                      }`}
-                      aria-label={`Ir a página ${page}`}
-                    >
-                      {page}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                onClick={() =>
-                  handlePageChange(Math.min(totalPages, currentPage + 1))
-                }
-                disabled={currentPage === totalPages}
-                className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg border border-border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
-                aria-label="Página siguiente"
-              >
-                Siguiente
-              </button>
+            <div className="flex gap-2 flex-wrap justify-center">
+              {pageNumbers.map((page, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => typeof page === 'number' && handlePageChange(page)}
+                  disabled={page === "..." || page === currentPage}
+                  className={`min-w-[40px] h-10 rounded-lg border transition-all ${
+                    page === currentPage
+                      ? 'bg-primary text-primary-foreground border-primary font-semibold'
+                      : page === "..."
+                      ? 'border-transparent cursor-default'
+                      : 'bg-card border-border hover:bg-accent hover:border-primary'
+                  }`}
+                  aria-label={typeof page === 'number' ? `Ir a página ${page}` : undefined}
+                  aria-current={page === currentPage ? 'page' : undefined}
+                >
+                  {page}
+                </button>
+              ))}
             </div>
 
-            <p className="text-sm text-muted-foreground">
-              Página {currentPage} de {totalPages}
-            </p>
-
-            {/* Botón extra para móviles largos */}
-            {isMobile && (
-              <button
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                className="mt-4 px-6 py-3 bg-primary text-primary-foreground rounded-lg touch-manipulation"
-                aria-label="Volver al inicio"
-              >
-                ↑ Volver al inicio
-              </button>
-            )}
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 rounded-lg bg-card border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent transition-colors"
+              aria-label="Página siguiente"
+            >
+              Siguiente →
+            </button>
           </motion.div>
+        )}
+
+        {/* Info de página actual */}
+        {!isLoading && filteredProducts.length > PRODUCTS_PER_PAGE && (
+          <p className="text-center text-sm text-muted-foreground mt-4">
+            Página {currentPage} de {totalPages}
+          </p>
         )}
       </main>
 
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
-  );
-};
+  )
+}
 
-export default Catalog;
+export default Catalog

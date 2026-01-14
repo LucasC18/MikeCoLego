@@ -86,7 +86,6 @@ interface ApiError {
 
 interface AdminProduct extends Product {
   categoryId?: string;
-  collection?: string; // ⬅️ NUEVO
 }
 
 interface ProductFormState {
@@ -108,7 +107,7 @@ const EMPTY_FORM: ProductFormState = {
   imagePreview: "",
   inStock: true,
   stockQty: 0,
-  collection: "Bloques", // ⬅️ default
+  collection: "Personajes", // ⬅️ default
 };
 
 function mapAdminProducts(
@@ -143,7 +142,7 @@ function mapAdminProducts(
       description: p.description ?? "",
       inStock: p.inStock,
       stockQty: p.stockQty ?? 0,
-      collection: p.collection ?? "Bloques", // ⬅️ NUEVO
+      collection: p.collection ?? "Personajes", // ⬅️ NUEVO
     };
   });
 }

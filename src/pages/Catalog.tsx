@@ -30,7 +30,7 @@ const Catalog = () => {
   const [showOnlyInStock, setShowOnlyInStock] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeCollection, setActiveCollection] = useState<string>("Figuras"); // ⬅️ NUEVO
+  const [activeCollection, setActiveCollection] = useState<string>("Personajes"); // ⬅️ NUEVO
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -215,7 +215,7 @@ const Catalog = () => {
 
         {/* ⬅️ NUEVO: Collection Selector */}
         <div className="flex justify-center gap-3 mb-8">
-          {["Bloques", "Personajes"].map((c) => (
+          {["Figuras", "Revistas", "Otros"].map((c) => (
             <button
               key={c}
               onClick={() => {

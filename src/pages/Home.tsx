@@ -1,34 +1,42 @@
-import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import ProductGrid from "@/components/ProductGrid";
-import CartDrawer from "@/components/CartDrawer";
-import { useProducts } from "@/context/ProductContext";
-import { Sparkles, ChevronDown, ArrowRight } from "lucide-react";
-import heroImage from "@/assets/hero-starwars.jpg";
-import { Product } from "@/types/product";
+import { useEffect, useState } from "react"
+import { motion } from "framer-motion"
+import { Link } from "react-router-dom"
+import Navbar from "@/components/Navbar"
+import ProductGrid from "@/components/ProductGrid"
+import CartDrawer from "@/components/CartDrawer"
+import { Sparkles, ChevronDown, ArrowRight } from "lucide-react"
+import heroImage from "@/assets/hero-starwars.jpg"
+import { Product } from "@/types/product"
+import { apiFetch } from "@/config/api"
 
 const Home = () => {
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   /* =======================
-     Products
-     ======================= */
-  const { products, isLoading } = useProducts();
+     Fetch destacados
+  ======================= */
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await apiFetch<{ items: Product[] }>(
+          `/v1/products?inStock=true&limit=4`
+        )
+        setFeaturedProducts(res.items)
+      } catch {
+        setFeaturedProducts([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-  /* =======================
-     Featured products
-     ======================= */
-  const featuredProducts = useMemo<Product[]>(() => {
-    return products.filter((p) => p.inStock).slice(0, 4);
-  }, [products]);
+    load()
+  }, [])
 
   const scrollToProducts = () => {
-    document
-      .getElementById("destacados")
-      ?.scrollIntoView({ behavior: "smooth" });
-  };
+    document.getElementById("destacados")?.scrollIntoView({ behavior: "smooth" })
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,13 +72,13 @@ const Home = () => {
               </span>
             </div>
 
-            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold mb-6 px-4 sm:px-0">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold mb-6">
               <span className="text-foreground">Jedi</span>
               <span className="text-gradient">Collector71</span>
             </h1>
 
             <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10">
-              Explorá nuestra colección de PERSONAJES. Agregá los que te
+              Explorá nuestra colección de personajes. Agregá los que te
               interesen y consultá directamente por WhatsApp.
             </p>
 
@@ -106,17 +114,12 @@ const Home = () => {
       {/* Featured */}
       <main id="destacados" className="container mx-auto px-4 py-20 bg-grid">
         <div className="text-center mb-12">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="font-display text-3xl md:text-4xl font-bold mb-4"
-          >
+          <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
             <span className="text-foreground">Personajes </span>
             <span className="text-gradient">Destacados</span>
-          </motion.h2>
+          </h2>
           <p className="text-muted-foreground">
-            Los PERSONAJES más populares de nuestra colección
+            Los personajes más populares de nuestra colección
           </p>
         </div>
 
@@ -128,29 +131,20 @@ const Home = () => {
           <ProductGrid products={featuredProducts} />
         )}
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="flex justify-center mt-12"
-        >
+        <div className="flex justify-center mt-12">
           <Link
             to="/catalogo"
-            className="inline-flex items-center gap-2 px-8 py-4 glass-card neon-border rounded-lg font-display font-semibold text-primary hover-glow transition-all group"
-            onClick={(e) => {
-              // Prevenir cualquier comportamiento de scroll
-              e.stopPropagation();
-            }}
+            className="inline-flex items-center gap-2 px-8 py-4 glass-card neon-border rounded-lg font-display font-semibold text-primary hover-glow transition-all"
           >
             Ver Catálogo Completo
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-5 h-5" />
           </Link>
-        </motion.div>
+        </div>
       </main>
 
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
-  );
-};
+  )
+}
 
-export default Home;
+export default Home

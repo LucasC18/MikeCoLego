@@ -192,6 +192,7 @@ const Admin = () => {
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [activeCollection, setActiveCollection] = useState<string>("Figuras"); // ⬅️ NUEVO
 
   const totalProducts = products.length;
   const inStockProducts = products.filter((p) => p.inStock).length;
@@ -211,9 +212,11 @@ const Admin = () => {
       const matchesCategory =
         categoryFilter === "all" || p.category === categoryFilter;
 
-      return matchesSearch && matchesCategory;
+      const matchesCollection = p.collection === activeCollection; // ⬅️ NUEVO
+
+      return matchesSearch && matchesCategory && matchesCollection;
     });
-  }, [products, search, categoryFilter]);
+  }, [products, search, categoryFilter, activeCollection]);
 
   /* ======================= LOAD ======================= */
   useEffect(() => {
@@ -240,7 +243,10 @@ const Admin = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm(EMPTY_FORM);
+    setForm({
+      ...EMPTY_FORM,
+      collection: activeCollection, // ⬅️ hereda la colección actual
+    });
     setDialogOpen(true);
   };
 
@@ -485,6 +491,23 @@ const Admin = () => {
           </Button>
         </div>
 
+        {/* ⬅️ NUEVO: Selector de colecciones */}
+        <div className="flex justify-center gap-3">
+          {["Bloques", "Personajes"].map((c) => (
+            <button
+              key={c}
+              onClick={() => setActiveCollection(c)}
+              className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${
+                activeCollection === c
+                  ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/30 shadow-lg shadow-cyan-500/20"
+                  : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+
         <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative">
@@ -724,9 +747,8 @@ const Admin = () => {
                     <SelectValue placeholder="Seleccionar colección" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-white/10">
-                    <SelectItem value="Figuras" className="text-white">Figuras</SelectItem>
-                    <SelectItem value="Revistas" className="text-white">Revistas</SelectItem>
-                    <SelectItem value="Otros" className="text-white">Otros</SelectItem>
+                    <SelectItem value="Bloques" className="text-white">Bloques</SelectItem>
+                    <SelectItem value="Personajes" className="text-white">Personajes</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -2,17 +2,17 @@ export interface Product {
   id: string
   name: string
 
-  // Label visible (ej: "Star Wars", "Marvel", "Terror")
+  // Usado para filtrar (slug: batman, marvel, star-wars, etc)
   category: string | null
 
-  // Slug URL-safe (ej: "star-wars", "marvel", "terror")
+  // Opcional si en algún lado querés mostrar el label real
   categorySlug?: string | null
 
   description: string
   inStock: boolean
   image: string
 
-  // Slug de colección (ej: "simil", "hasbro-3-75")
+  // Usado para filtrar (slug: simil, hasbro-3-75)
   collection: string
 
   // Solo admin

@@ -9,18 +9,10 @@ interface ProductApiDTO {
   id: string
   name: string
   image?: string | null
-  imageUrl?: string | null
-
   description?: string | null
   inStock: boolean
-
-  category?: string | null
-  categoryId?: string | null
-  categorySlug?: string | null
-
-  collection?: string | null
-  collectionId?: string | null
-  collectionSlug?: string | null
+  category?: string | null   // slug ya viene listo
+  collection?: string | null // slug ya viene listo
 }
 
 /* =======================
@@ -30,19 +22,13 @@ function mapProductFromApi(p: ProductApiDTO): Product {
   return {
     id: p.id,
     name: p.name,
-    image: p.image ?? p.imageUrl ?? "",
+    image: p.image ?? "",
     description: p.description ?? "",
     inStock: p.inStock,
-
-    // usamos SLUG para filtros (URL safe)
-    // si no existe slug, usamos el nombre
-    category: p.categorySlug ?? p.category ?? null,
-
-    // idem para colección
-    collection: p.collectionSlug ?? p.collection ?? "simil",
+    category: p.category ?? null,
+    collection: p.collection ?? "",
   }
 }
-
 
 /* =======================
    Context types
@@ -78,12 +64,8 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
       const mapped = res.map(mapProductFromApi)
       setProducts(mapped)
     } catch (e) {
-      if (e instanceof Error) {
-        setError(e.message)
-      } else {
-        setError("Error cargando productos")
-      }
       setProducts([])
+      setError(e instanceof Error ? e.message : "Error cargando productos")
     } finally {
       setIsLoading(false)
     }

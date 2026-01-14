@@ -76,6 +76,7 @@ interface ProductApiDTO {
   description?: string | null;
   inStock: boolean;
   stockQty?: number | null;
+  collection?: string; // ⬅️ NUEVO
 }
 
 interface ApiError {
@@ -95,6 +96,7 @@ interface ProductFormState {
   imagePreview: string;
   inStock: boolean;
   stockQty: number;
+  collection: string; // ⬅️ NUEVO
 }
 
 const EMPTY_FORM: ProductFormState = {
@@ -105,6 +107,7 @@ const EMPTY_FORM: ProductFormState = {
   imagePreview: "",
   inStock: true,
   stockQty: 0,
+  collection: "Figuras", // ⬅️ default
 };
 
 function mapAdminProducts(
@@ -112,23 +115,20 @@ function mapAdminProducts(
   categories: Category[]
 ): AdminProduct[] {
   return items.map((p) => {
-    // Debug: ver qué trae la API
     console.log("Product from API:", {
       id: p.id,
       name: p.name,
       categoryId: p.categoryId,
       categoryName: p.categoryName,
+      collection: p.collection,
     });
 
-    // Primero intentar con categoryName de la API
     let category = p.categoryName ?? undefined;
 
-    // Si no existe o es null, buscar por categoryId
     if (!category && p.categoryId) {
       category = categories.find((c) => c.id === p.categoryId)?.name;
     }
 
-    // Fallback
     if (!category) {
       category = "Sin categoría";
     }
@@ -142,6 +142,7 @@ function mapAdminProducts(
       description: p.description ?? "",
       inStock: p.inStock,
       stockQty: p.stockQty ?? 0,
+      collection: p.collection ?? "Figuras", // ⬅️ NUEVO
     };
   });
 }
@@ -155,11 +156,6 @@ function getErrorMessage(err: unknown): string {
   return "Error inesperado";
 }
 
-/**
- * Trae TODOS los productos paginando.
- * Asume que la API usa ?page= &limit=.
- * Si tu backend usa otro esquema (offset/cursor), se cambia acá sin tocar el resto.
- */
 async function fetchAllAdminProducts(): Promise<ProductApiDTO[]> {
   const all: ProductApiDTO[] = [];
   let page = 1;
@@ -173,7 +169,6 @@ async function fetchAllAdminProducts(): Promise<ProductApiDTO[]> {
 
     all.push(...res.items);
 
-    // Si vino menos que el límite, no hay más páginas
     if (res.items.length < limit) break;
 
     page++;
@@ -195,7 +190,6 @@ const Admin = () => {
   const [productToDelete, setProductToDelete] =
     useState<AdminProduct | null>(null);
 
-  // 🔎 Buscador + filtro
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
@@ -211,7 +205,8 @@ const Admin = () => {
         q.length === 0 ||
         p.name.toLowerCase().includes(q) ||
         p.description.toLowerCase().includes(q) ||
-        (p.category ?? "").toLowerCase().includes(q);
+        (p.category ?? "").toLowerCase().includes(q) ||
+        (p.collection ?? "").toLowerCase().includes(q);
 
       const matchesCategory =
         categoryFilter === "all" || p.category === categoryFilter;
@@ -229,7 +224,6 @@ const Admin = () => {
         const categoriesRes = await apiFetch<Category[]>("/api/v1/categories");
         setCategories(categoriesRes);
 
-        // ✅ trae TODO (no solo 50)
         const items = await fetchAllAdminProducts();
         setProducts(mapAdminProducts(items, categoriesRes));
       } catch (error: unknown) {
@@ -263,6 +257,7 @@ const Admin = () => {
       imagePreview: p.image,
       inStock: p.inStock,
       stockQty: p.stockQty ?? 0,
+      collection: p.collection ?? "Figuras", // ⬅️ NUEVO
     });
     setDialogOpen(true);
   };
@@ -356,6 +351,7 @@ const Admin = () => {
               categoryId: form.categoryId,
               inStock: form.inStock,
               stockQty: form.stockQty,
+              collection: form.collection, // ⬅️ NUEVO
             }),
           }
         );
@@ -370,6 +366,7 @@ const Admin = () => {
             categoryId: form.categoryId,
             inStock: form.inStock,
             stockQty: form.stockQty,
+            collection: form.collection, // ⬅️ NUEVO
           }),
         });
         productId = created.id;
@@ -389,7 +386,6 @@ const Admin = () => {
       setDialogOpen(false);
       setForm(EMPTY_FORM);
 
-      // ✅ recarga TODO (no solo 50)
       const items = await fetchAllAdminProducts();
       setProducts(mapAdminProducts(items, categories));
 
@@ -489,7 +485,6 @@ const Admin = () => {
           </Button>
         </div>
 
-        {/* ✅ Buscador + filtro (solo se agrega esto, no cambia lo demás) */}
         <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative">
@@ -551,6 +546,7 @@ const Admin = () => {
                 <TableHead className="text-gray-300">Imagen</TableHead>
                 <TableHead className="text-gray-300">Nombre</TableHead>
                 <TableHead className="text-gray-300">Categoría</TableHead>
+                <TableHead className="text-gray-300">Colección</TableHead>
                 <TableHead className="text-gray-300">Descripción</TableHead>
                 <TableHead className="text-gray-300">Stock</TableHead>
                 <TableHead className="text-gray-300">Disponible</TableHead>
@@ -560,7 +556,7 @@ const Admin = () => {
             <TableBody>
               {filteredProducts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-16">
+                  <TableCell colSpan={8} className="text-center py-16">
                     <div className="flex flex-col items-center gap-3">
                       <div className="p-4 rounded-full bg-white/5">
                         <Package className="w-12 h-12 text-white/20" />
@@ -605,6 +601,11 @@ const Admin = () => {
                     <TableCell>
                       <span className="px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-medium border border-purple-500/30">
                         {product.category}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-medium border border-cyan-500/30">
+                        {product.collection}
                       </span>
                     </TableCell>
                     <TableCell className="max-w-xs truncate text-gray-300">
@@ -693,23 +694,42 @@ const Admin = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Categoría</label>
-              <Select
-                value={form.categoryId}
-                onValueChange={(value) => setForm({ ...form, categoryId: value })}
-              >
-                <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                  <SelectValue placeholder="Seleccionar categoría" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-white/10">
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id} className="text-white">
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Categoría</label>
+                <Select
+                  value={form.categoryId}
+                  onValueChange={(value) => setForm({ ...form, categoryId: value })}
+                >
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectValue placeholder="Seleccionar categoría" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/10">
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id} className="text-white">
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Colección</label>
+                <Select
+                  value={form.collection}
+                  onValueChange={(value) => setForm({ ...form, collection: value })}
+                >
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectValue placeholder="Seleccionar colección" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/10">
+                    <SelectItem value="Figuras" className="text-white">Figuras</SelectItem>
+                    <SelectItem value="Revistas" className="text-white">Revistas</SelectItem>
+                    <SelectItem value="Otros" className="text-white">Otros</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">

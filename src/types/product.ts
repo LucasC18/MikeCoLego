@@ -7,7 +7,10 @@ export interface Product {
   inStock: boolean;
   image: string;
 
-  // Solo admin (backend lo devuelve en /admin/products)
+  // NUEVO
+  collection: string;
+
+  // Solo admin
   stockQty?: number | null;
 }
 

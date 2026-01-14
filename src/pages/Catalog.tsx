@@ -11,8 +11,6 @@ import { useSearchParams } from "react-router-dom";
 
 const PRODUCTS_PER_PAGE = 24;
 
-
-
 // Hook personalizado para detectar móvil (para optimizaciones)
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(false);
@@ -32,12 +30,12 @@ const Catalog = () => {
   const [showOnlyInStock, setShowOnlyInStock] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const isMobile = useIsMobile(); // Detectar móvil para ajustesÇ
+  const [activeCollection, setActiveCollection] = useState<string>("Figuras"); // ⬅️ NUEVO
+  const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const categoryFromUrl = searchParams.get("category");
-    
-
+  const collectionFromUrl = searchParams.get("collection"); // ⬅️ NUEVO
 
   /* =======================
      Products from context
@@ -55,62 +53,78 @@ const Catalog = () => {
   }, [searchQuery]);
 
   /* =======================
-     Categories (dynamic)
+     ⬅️ NUEVO: Collection from URL
+     ======================= */
+  useEffect(() => {
+    if (!collectionFromUrl) return;
+    setActiveCollection(collectionFromUrl);
+    setSelectedCategories([]);
+    setCurrentPage(1);
+  }, [collectionFromUrl]);
+
+  /* =======================
+     Categories (dynamic, filtered by collection)
      ======================= */
   const categories = useMemo(() => {
     const set = new Set<string>();
-    products.forEach((p) => {
-      if (p.category) set.add(p.category);
-    });
+    products
+      .filter((p) => p.collection === activeCollection) // ⬅️ MODIFICADO
+      .forEach((p) => {
+        if (p.category) set.add(p.category);
+      });
     return Array.from(set);
-  }, [products]);
+  }, [products, activeCollection]);
 
   /* =======================
      Category toggle (memoized)
      ======================= */
-const handleCategoryToggle = useCallback((category: string) => {
-  setSelectedCategories((prev) =>
-    prev.includes(category)
-      ? prev.filter((c) => c !== category)
-      : [...prev, category]
-  );
+  const handleCategoryToggle = useCallback((category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    );
 
-  // 🔥 limpiar la URL cuando el usuario interactúa manualmente
-  setSearchParams({});
+    // limpiar la URL cuando el usuario interactúa manualmente
+    setSearchParams({});
 
-  console.log(`Categoría toggled: ${category}`);
-}, [setSearchParams]);
+    console.log(`Categoría toggled: ${category}`);
+  }, [setSearchParams]);
 
+  useEffect(() => {
+    if (!categoryFromUrl) return;
 
-    useEffect(() => {
-  if (!categoryFromUrl) return;
-
-  setSelectedCategories([categoryFromUrl]);
-  setCurrentPage(1);
-}, [categoryFromUrl]);
-
+    setSelectedCategories([categoryFromUrl]);
+    setCurrentPage(1);
+  }, [categoryFromUrl]);
 
   /* =======================
-     Filtered products (optimized with error handling)
+     Filtered products (optimized with error handling + collection filter)
      ======================= */
   const filteredProducts = useMemo(() => {
     try {
       const query = debouncedQuery.trim().toLowerCase();
       return products.filter((product: Product) => {
-        if (!product || typeof product.name !== "string") return false; // Fallback si datos corruptos
+        if (!product || typeof product.name !== "string") return false;
+        const matchesCollection = product.collection === activeCollection; // ⬅️ NUEVO
         const matchesSearch =
           query === "" || product.name.toLowerCase().includes(query);
         const matchesCategory =
           selectedCategories.length === 0 ||
           selectedCategories.includes(product.category || "");
         const matchesStock = !showOnlyInStock || product.inStock;
-        return matchesSearch && matchesCategory && matchesStock;
+        return (
+          matchesCollection && // ⬅️ NUEVO
+          matchesSearch &&
+          matchesCategory &&
+          matchesStock
+        );
       });
     } catch (error) {
       console.error("Error filtrando productos:", error);
-      return []; // Fallback vacío
+      return [];
     }
-  }, [products, debouncedQuery, selectedCategories, showOnlyInStock]);
+  }, [products, debouncedQuery, selectedCategories, showOnlyInStock, activeCollection]);
 
   /* =======================
      Reset page only if current page is invalid after filtering
@@ -164,7 +178,7 @@ const handleCategoryToggle = useCallback((category: string) => {
   }, []);
 
   const handlePageChange = useCallback((page: number) => {
-    console.log(`Cambiando a página: ${page} (Móvil: ${isMobile})`); // Log extendido
+    console.log(`Cambiando a página: ${page} (Móvil: ${isMobile})`);
     setCurrentPage(page);
   }, [isMobile]);
 
@@ -186,7 +200,7 @@ const handleCategoryToggle = useCallback((category: string) => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: isMobile ? 0.3 : 0.5 }} // Menos animación en móvil
+          transition={{ duration: isMobile ? 0.3 : 0.5 }}
           className="text-center mb-8 sm:mb-12"
         >
           <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
@@ -198,6 +212,27 @@ const handleCategoryToggle = useCallback((category: string) => {
             encontrar exactamente lo que buscás.
           </p>
         </motion.div>
+
+        {/* ⬅️ NUEVO: Collection Selector */}
+        <div className="flex justify-center gap-3 mb-8">
+          {["Figuras", "Revistas", "Otros"].map((c) => (
+            <button
+              key={c}
+              onClick={() => {
+                setActiveCollection(c);
+                setSelectedCategories([]);
+                setSearchParams({ collection: c });
+              }}
+              className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${
+                activeCollection === c
+                  ? "bg-primary text-primary-foreground border-primary shadow-lg"
+                  : "bg-background border-border hover:bg-accent"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
 
         {/* Search and Filters */}
         <div className="space-y-4 sm:space-y-6 mb-8 sm:mb-10">

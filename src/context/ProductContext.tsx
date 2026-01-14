@@ -14,6 +14,7 @@ interface ProductApiDTO {
   categoryName?: string | null;
   description?: string | null;
   inStock: boolean;
+  collection?: string; // ⬅️ NUEVO
 }
 
 /* =======================
@@ -39,6 +40,7 @@ function mapProductFromApi(p: ProductApiDTO): Product {
     category: p.category ?? p.categoryName ?? "Sin categoría",
     description: p.description ?? "",
     inStock: p.inStock,
+    collection: p.collection ?? "Figuras", // ⬅️ NUEVO - default
   };
 }
 
@@ -48,46 +50,45 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
 
   const reload = async () => {
-  setIsLoading(true);
-  setError(null);
+    setIsLoading(true);
+    setError(null);
 
-  try {
-    const allProducts: Product[] = [];
-    let page = 1;
-    const limit = 100;
+    try {
+      const allProducts: Product[] = [];
+      let page = 1;
+      const limit = 100;
 
-    while (true) {
-      const res = await apiFetch<{
-        items: ProductApiDTO[];
-        total: number;
-      }>(`/api/v1/products?page=${page}&limit=${limit}`);
+      while (true) {
+        const res = await apiFetch<{
+          items: ProductApiDTO[];
+          total: number;
+        }>(`/api/v1/products?page=${page}&limit=${limit}`);
 
-      const items = Array.isArray(res.items)
-        ? res.items.map(mapProductFromApi)
-        : [];
+        const items = Array.isArray(res.items)
+          ? res.items.map(mapProductFromApi)
+          : [];
 
-      allProducts.push(...items);
+        allProducts.push(...items);
 
-      if (items.length < limit) {
-        break; // no hay más páginas
+        if (items.length < limit) {
+          break; // no hay más páginas
+        }
+
+        page++;
       }
 
-      page++;
+      setProducts(allProducts);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError("Error cargando productos");
+      }
+      setProducts([]);
+    } finally {
+      setIsLoading(false);
     }
-
-    setProducts(allProducts);
-  } catch (e: unknown) {
-    if (e instanceof Error) {
-      setError(e.message);
-    } else {
-      setError("Error cargando productos");
-    }
-    setProducts([]);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  };
 
   useEffect(() => {
     void reload();

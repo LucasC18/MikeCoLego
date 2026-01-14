@@ -3,25 +3,44 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 
+type Category = {
+  id: string
+  name: string
+  slug: string
+}
+
+type Collection = {
+  id: string
+  name: string
+  slug: string
+}
+
 interface FiltersProps {
-  categories: string[]
-  selectedCategories: string[]
-  onCategoryToggle: (category: string) => void
-  onClearCategories: () => void       // 🔥 NUEVO
+  categories: Category[]
+  collections: Collection[]
+
+  selectedCategory: string | null
+  selectedCollection: string | null
+
+  onCategoryChange: (slug: string | null) => void
+  onCollectionChange: (slug: string | null) => void
+
   showOnlyInStock: boolean
   onStockFilterChange: (value: boolean) => void
+  onClearFilters: () => void
 }
 
 const Filters = ({
   categories,
-  selectedCategories,
-  onCategoryToggle,
-  onClearCategories,
+  collections,
+  selectedCategory,
+  selectedCollection,
+  onCategoryChange,
+  onCollectionChange,
   showOnlyInStock,
   onStockFilterChange,
+  onClearFilters,
 }: FiltersProps) => {
-  const allSelected = selectedCategories.length === 0
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -31,67 +50,98 @@ const Filters = ({
     >
       {/* Categorías */}
       <div className="space-y-3">
-        <h3 className="font-display text-sm font-semibold text-primary uppercase tracking-wider">
-          Categorías
-        </h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wider">Categorías</h3>
 
         <div className="flex flex-wrap gap-2">
-          {/* Todas */}
           <Badge
             role="button"
-            aria-pressed={allSelected}
-            tabIndex={0}
-            onClick={onClearCategories}
-            className={`cursor-pointer transition-all duration-300 px-4 py-2 text-sm font-medium ${
-              allSelected
-                ? "bg-primary text-primary-foreground neon-glow"
-                : "bg-card/50 border-primary/30 text-foreground hover:border-primary hover:bg-primary/10"
+            onClick={() => onCategoryChange(null)}
+            className={`cursor-pointer px-4 py-2 ${
+              !selectedCategory
+                ? "bg-primary text-primary-foreground"
+                : "bg-card border-primary/30 hover:bg-primary/10"
             }`}
           >
             Todas
           </Badge>
 
-          {categories.map((category, index) => {
-            const isSelected = selectedCategories.includes(category)
+          {categories.map((cat) => {
+            const isSelected = selectedCategory === cat.slug
 
             return (
-              <motion.div
-                key={category}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 + index * 0.05 }}
+              <Badge
+                key={cat.id}
+                role="button"
+                onClick={() => onCategoryChange(cat.slug)}
+                className={`cursor-pointer px-4 py-2 ${
+                  isSelected
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card border-primary/30 hover:bg-primary/10"
+                }`}
               >
-                <Badge
-                  role="button"
-                  aria-pressed={isSelected}
-                  tabIndex={0}
-                  onClick={() => onCategoryToggle(category)}
-                  className={`cursor-pointer transition-all duration-300 px-4 py-2 text-sm font-medium ${
-                    isSelected
-                      ? "bg-primary text-primary-foreground neon-glow"
-                      : "bg-card/50 border-primary/30 text-foreground hover:border-primary hover:bg-primary/10"
-                  }`}
-                >
-                  {category}
-                </Badge>
-              </motion.div>
+                {cat.name}
+              </Badge>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Colecciones */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wider">Colecciones</h3>
+
+        <div className="flex flex-wrap gap-2">
+          <Badge
+            role="button"
+            onClick={() => onCollectionChange(null)}
+            className={`cursor-pointer px-4 py-2 ${
+              !selectedCollection
+                ? "bg-primary text-primary-foreground"
+                : "bg-card border-primary/30 hover:bg-primary/10"
+            }`}
+          >
+            Todas
+          </Badge>
+
+          {collections.map((col) => {
+            const isSelected = selectedCollection === col.slug
+
+            return (
+              <Badge
+                key={col.id}
+                role="button"
+                onClick={() => onCollectionChange(col.slug)}
+                className={`cursor-pointer px-4 py-2 ${
+                  isSelected
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card border-primary/30 hover:bg-primary/10"
+                }`}
+              >
+                {col.name}
+              </Badge>
             )
           })}
         </div>
       </div>
 
       {/* Stock */}
-      <div className="flex items-center gap-3 p-4 glass-card rounded-lg">
+      <div className="flex items-center gap-3 p-4 rounded-lg border">
         <Switch
           id="stock-filter"
           checked={showOnlyInStock}
           onCheckedChange={onStockFilterChange}
-          className="data-[state=checked]:bg-neon-green"
         />
         <Label htmlFor="stock-filter" className="text-sm font-medium cursor-pointer">
           Mostrar solo disponibles
         </Label>
       </div>
+
+      <button
+        onClick={onClearFilters}
+        className="text-sm underline text-muted-foreground"
+      >
+        Limpiar filtros
+      </button>
     </motion.div>
   )
 }

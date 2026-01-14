@@ -1,21 +1,19 @@
 export interface Product {
   id: string
   name: string
-
-  // Usado para filtrar (slug: batman, marvel, star-wars, etc)
-  category: string | null
-
-  // Opcional si en algún lado querés mostrar el label real
-  categorySlug?: string | null
-
   description: string
-  inStock: boolean
   image: string
+  inStock: boolean
 
-  // Usado para filtrar (slug: simil, hasbro-3-75)
-  collection: string
+  // Lo que se muestra
+  category: string | null          // ej: "Star Wars"
+  collection: string | null        // ej: "Rancor Battalion"
 
-  // Solo admin
+  // Lo que se usa para filtrar
+  categorySlug: string | null      // ej: "star-wars"
+  collectionSlug: string | null    // ej: "rancor-battalion"
+
+  // Admin / interno
   stockQty?: number | null
 }
 

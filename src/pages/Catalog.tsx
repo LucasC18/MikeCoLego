@@ -215,7 +215,7 @@ const Catalog = () => {
 
         {/* ⬅️ NUEVO: Collection Selector */}
         <div className="flex justify-center gap-3 mb-8">
-          {["Figuras", "Revistas", "Otros"].map((c) => (
+          {["Bloques", "Personajes"].map((c) => (
             <button
               key={c}
               onClick={() => {

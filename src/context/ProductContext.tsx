@@ -1,33 +1,33 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { Product } from "@/types/product";
-import { apiFetch } from "@/config/api";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react"
+import { Product } from "@/types/product"
+import { apiFetch } from "@/config/api"
 
 /* =======================
    Backend DTO
    ======================= */
 interface ProductApiDTO {
-  id: string;
-  name: string;
-  image?: string | null;
-  imageUrl?: string | null;
-  category?: string | null;
-  categoryName?: string | null;
-  description?: string | null;
-  inStock: boolean;
-  collection?: string; // ⬅️ NUEVO
+  id: string
+  name: string
+  image?: string | null
+  imageUrl?: string | null
+  category?: string | null
+  categoryName?: string | null
+  description?: string | null
+  inStock: boolean
+  collection?: string
 }
 
 /* =======================
    Context types
    ======================= */
 interface ProductContextType {
-  products: Product[];
-  isLoading: boolean;
-  error: string | null;
-  reload: () => Promise<void>;
+  products: Product[]
+  isLoading: boolean
+  error: string | null
+  reload: () => Promise<void>
 }
 
-const ProductContext = createContext<ProductContextType | undefined>(undefined);
+const ProductContext = createContext<ProductContextType | undefined>(undefined)
 
 /* =======================
    Mapper backend -> frontend
@@ -40,59 +40,46 @@ function mapProductFromApi(p: ProductApiDTO): Product {
     category: p.category ?? p.categoryName ?? "Sin categoría",
     description: p.description ?? "",
     inStock: p.inStock,
-    collection: p.collection ?? "Figuras", // ⬅️ NUEVO - default
-  };
+    collection: p.collection ?? "Figuras",
+  }
 }
 
+/* =======================
+   Provider
+   ======================= */
 export const ProductProvider = ({ children }: { children: ReactNode }) => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const reload = async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
 
     try {
-      const allProducts: Product[] = [];
-      let page = 1;
-      const limit = 100;
+      const res = await apiFetch<ProductApiDTO[]>("/v1/products")
 
-      while (true) {
-        const res = await apiFetch<{
-          items: ProductApiDTO[];
-          total: number;
-        }>(`/api/v1/products?page=${page}&limit=${limit}`);
-
-        const items = Array.isArray(res.items)
-          ? res.items.map(mapProductFromApi)
-          : [];
-
-        allProducts.push(...items);
-
-        if (items.length < limit) {
-          break; // no hay más páginas
-        }
-
-        page++;
+      if (!Array.isArray(res)) {
+        throw new Error("Formato inválido del backend")
       }
 
-      setProducts(allProducts);
-    } catch (e: unknown) {
+      const mapped = res.map(mapProductFromApi)
+      setProducts(mapped)
+    } catch (e) {
       if (e instanceof Error) {
-        setError(e.message);
+        setError(e.message)
       } else {
-        setError("Error cargando productos");
+        setError("Error cargando productos")
       }
-      setProducts([]);
+      setProducts([])
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    void reload();
-  }, []);
+    void reload()
+  }, [])
 
   return (
     <ProductContext.Provider
@@ -105,13 +92,16 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     >
       {children}
     </ProductContext.Provider>
-  );
-};
+  )
+}
 
+/* =======================
+   Hook
+   ======================= */
 export const useProducts = () => {
-  const ctx = useContext(ProductContext);
+  const ctx = useContext(ProductContext)
   if (!ctx) {
-    throw new Error("useProducts must be used within a ProductProvider");
+    throw new Error("useProducts must be used within a ProductProvider")
   }
-  return ctx;
-};
+  return ctx
+}

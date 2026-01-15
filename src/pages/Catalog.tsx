@@ -56,6 +56,7 @@ const NAVBAR_HEIGHT = 80
 ================================ */
 const buildQueryParams = (filters: Partial<FilterState>, withPaging = true) => {
   const p = new URLSearchParams()
+
   if (filters.category) p.set("category", filters.category)
   if (filters.collection) p.set("collection", filters.collection)
   if (filters.search) p.set("search", filters.search)
@@ -68,6 +69,7 @@ const buildQueryParams = (filters: Partial<FilterState>, withPaging = true) => {
     p.set("page", "1")
     p.set("limit", String(METADATA_LIMIT))
   }
+
   return p.toString()
 }
 
@@ -102,28 +104,42 @@ const useProducts = (filters: FilterState) => {
 }
 
 /* ================================
-   METADATA FROM PRODUCTS
+   SLUG METADATA (UX LOGIC)
 ================================ */
-const useProductSlugs = (filters: Omit<FilterState, "page">) => {
-  const [categorySlugs, setCategorySlugs] = useState<Set<string>>(new Set())
-  const [collectionSlugs, setCollectionSlugs] = useState<Set<string>>(new Set())
+const useCategorySlugs = (filters: { search: string; inStock: boolean }) => {
+  const [slugs, setSlugs] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    apiFetch<ProductsApiResponse>(`/v1/products?${buildQueryParams(filters, false)}`).then(r => {
-      const cats = new Set<string>()
-      const cols = new Set<string>()
-
+    apiFetch<ProductsApiResponse>(
+      `/v1/products?${buildQueryParams({ ...filters }, false)}`
+    ).then(r => {
+      const s = new Set<string>()
       for (const p of r.items || []) {
-        if (p.categorySlug) cats.add(p.categorySlug)
-        if (p.collectionSlug) cols.add(p.collectionSlug)
+        if (p.categorySlug) s.add(p.categorySlug)
       }
-
-      setCategorySlugs(cats)
-      setCollectionSlugs(cols)
+      setSlugs(s)
     })
-  }, [filters])
+  }, [filters.search, filters.inStock])
 
-  return { categorySlugs, collectionSlugs }
+  return slugs
+}
+
+const useCollectionSlugs = (filters: { category: string | null; search: string; inStock: boolean }) => {
+  const [slugs, setSlugs] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    apiFetch<ProductsApiResponse>(
+      `/v1/products?${buildQueryParams({ ...filters }, false)}`
+    ).then(r => {
+      const s = new Set<string>()
+      for (const p of r.items || []) {
+        if (p.collectionSlug) s.add(p.collectionSlug)
+      }
+      setSlugs(s)
+    })
+  }, [filters.category, filters.search, filters.inStock])
+
+  return slugs
 }
 
 /* ================================
@@ -170,14 +186,13 @@ const Catalog = () => {
 
   const { products, total, loading } = useProducts(filters)
   const { categories, collections } = useMetadata()
-  const { categorySlugs, collectionSlugs } = useProductSlugs({
-    category,
-    collection,
-    search: debouncedSearch,
-    inStock,
-  })
 
-  // 👇 PASAMOS TODAS, NO SOLO LAS VISIBLES
+  // 👇 CATEGORÍAS NO DEPENDEN DE COLECCIÓN
+  const categorySlugs = useCategorySlugs({ search: debouncedSearch, inStock })
+
+  // 👇 COLECCIONES SÍ DEPENDEN DE CATEGORÍA
+  const collectionSlugs = useCollectionSlugs({ category, search: debouncedSearch, inStock })
+
   const categoriesWithState = useMemo(
     () => categories.map(c => ({ ...c, hasProducts: categorySlugs.has(c.slug) })),
     [categories, categorySlugs]

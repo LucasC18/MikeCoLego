@@ -107,12 +107,16 @@ const useProducts = (filters: FilterState) => {
    CATEGORY SLUGS
    Categories ONLY depend on collection
 ================================ */
-const useCategorySlugs = (collection: string | null) => {
+const useCategorySlugs = (filters: {
+  collection: string | null
+  search: string
+  inStock: boolean
+}) => {
   const [slugs, setSlugs] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     apiFetch<ProductsApiResponse>(
-      `/v1/products?${buildQueryParams({ collection }, false)}`
+      `/v1/products?${buildQueryParams(filters, false)}`
     ).then(r => {
       const s = new Set<string>()
       for (const p of r.items || []) {
@@ -120,10 +124,11 @@ const useCategorySlugs = (collection: string | null) => {
       }
       setSlugs(s)
     })
-  }, [collection])
+  }, [filters.collection, filters.search, filters.inStock])
 
   return slugs
 }
+
 
 /* ================================
    COLLECTION SLUGS
@@ -196,7 +201,12 @@ const Catalog = () => {
   const { products, total, loading } = useProducts(filters)
   const { categories, collections } = useMetadata()
 
-  const categorySlugs = useCategorySlugs(collection)
+const categorySlugs = useCategorySlugs({
+  collection,
+  search: debouncedSearch,
+  inStock,
+})
+
 
   const collectionSlugs = useCollectionSlugs({
     category,

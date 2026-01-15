@@ -18,17 +18,8 @@ import { Badge } from "@/components/ui/badge"
 /* ================================
    TYPES
 ================================ */
-interface Category {
-  id: string
-  name: string
-  slug: string
-}
-
-interface Collection {
-  id: string
-  name: string
-  slug: string
-}
+interface Category { id: string; name: string; slug: string }
+interface Collection { id: string; name: string; slug: string }
 
 interface ProductsApiResponse {
   items: Product[]
@@ -43,33 +34,19 @@ interface FilterState {
   page: number
 }
 
-/* ================================
-   CONSTANTS
-================================ */
 const PRODUCTS_PER_PAGE = 24
-const METADATA_LIMIT = 100000
-const DEBOUNCE_DELAY = 300
-const NAVBAR_HEIGHT = 80
 
 /* ================================
    HELPERS
 ================================ */
-const buildQueryParams = (filters: Partial<FilterState>, withPaging = true) => {
+const buildQueryParams = (filters: Partial<FilterState>) => {
   const p = new URLSearchParams()
-
   if (filters.category) p.set("category", filters.category)
   if (filters.collection) p.set("collection", filters.collection)
   if (filters.search) p.set("search", filters.search)
   if (filters.inStock) p.set("inStock", "true")
-
-  if (withPaging) {
-    p.set("page", String(filters.page ?? 1))
-    p.set("limit", String(PRODUCTS_PER_PAGE))
-  } else {
-    p.set("page", "1")
-    p.set("limit", String(METADATA_LIMIT))
-  }
-
+  p.set("page", String(filters.page ?? 1))
+  p.set("limit", String(PRODUCTS_PER_PAGE))
   return p.toString()
 }
 
@@ -83,100 +60,6 @@ const useDebounce = <T,>(v: T, delay: number): T => {
 }
 
 /* ================================
-   PRODUCTS
-================================ */
-const useProducts = (filters: FilterState) => {
-  const [products, setProducts] = useState<Product[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    setLoading(true)
-    apiFetch<ProductsApiResponse>(`/v1/products?${buildQueryParams(filters, true)}`)
-      .then(r => {
-        setProducts(r.items || [])
-        setTotal(r.total || 0)
-      })
-      .finally(() => setLoading(false))
-  }, [filters])
-
-  return { products, total, loading }
-}
-
-/* ================================
-   CATEGORY SLUGS
-   Categories ONLY depend on collection
-================================ */
-const useCategorySlugs = (filters: {
-  collection: string | null
-  search: string
-  inStock: boolean
-}) => {
-  const [slugs, setSlugs] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    apiFetch<ProductsApiResponse>(
-      `/v1/products?${buildQueryParams(filters, false)}`
-    ).then(r => {
-      const s = new Set<string>()
-      for (const p of r.items || []) {
-        if (p.categorySlug) s.add(p.categorySlug)
-      }
-      setSlugs(s)
-    })
-  }, [filters.collection, filters.search, filters.inStock])
-
-  return slugs
-}
-
-
-/* ================================
-   COLLECTION SLUGS
-   Collections depend on category + search + stock
-================================ */
-const useCollectionSlugs = (filters: {
-  category: string | null
-  search: string
-  inStock: boolean
-}) => {
-  const [slugs, setSlugs] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    apiFetch<ProductsApiResponse>(
-      `/v1/products?${buildQueryParams(filters, false)}`
-    ).then(r => {
-      const s = new Set<string>()
-      for (const p of r.items || []) {
-        if (p.collectionSlug) s.add(p.collectionSlug)
-      }
-      setSlugs(s)
-    })
-  }, [filters.category, filters.search, filters.inStock])
-
-  return slugs
-}
-
-/* ================================
-   STATIC METADATA
-================================ */
-const useMetadata = () => {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [collections, setCollections] = useState<Collection[]>([])
-
-  useEffect(() => {
-    Promise.all([
-      apiFetch<Category[]>("/v1/categories"),
-      apiFetch<Collection[]>("/v1/collections"),
-    ]).then(([cats, cols]) => {
-      setCategories(cats || [])
-      setCollections(cols || [])
-    })
-  }, [])
-
-  return { categories, collections }
-}
-
-/* ================================
    COMPONENT
 ================================ */
 const Catalog = () => {
@@ -184,6 +67,7 @@ const Catalog = () => {
   const location = useLocation()
   const [, startTransition] = useTransition()
 
+  // State
   const [search, setSearch] = useState("")
   const [category, setCategory] = useState<string | null>(null)
   const [collection, setCollection] = useState<string | null>(null)
@@ -191,54 +75,54 @@ const Catalog = () => {
   const [page, setPage] = useState(1)
   const [cartOpen, setCartOpen] = useState(false)
 
-  const debouncedSearch = useDebounce(search, DEBOUNCE_DELAY)
+  // Data State
+  const [products, setProducts] = useState<Product[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [metadata, setMetadata] = useState<{cats: Category[], cols: Collection[]}>({ cats: [], cols: [] })
 
-  const filters = useMemo<FilterState>(
-    () => ({ category, collection, search: debouncedSearch, inStock, page }),
-    [category, collection, debouncedSearch, inStock, page]
-  )
+  const debouncedSearch = useDebounce(search, 300)
 
-  const { products, total, loading } = useProducts(filters)
-  const { categories, collections } = useMetadata()
+  // 1. Cargar Metadatos Iniciales (Solo una vez)
+  useEffect(() => {
+    Promise.all([
+      apiFetch<Category[]>("/v1/categories"),
+      apiFetch<Collection[]>("/v1/collections"),
+    ]).then(([cats, cols]) => setMetadata({ cats: cats || [], cols: cols || [] }))
+  }, [])
 
-const categorySlugs = useCategorySlugs({
-  collection,
-  search: debouncedSearch,
-  inStock,
-})
-
-
-  const collectionSlugs = useCollectionSlugs({
-    category,
-    search: debouncedSearch,
-    inStock,
-  })
-
-  const categoriesFiltered = useMemo(
-    () => categories.filter(c => categorySlugs.has(c.slug)),
-    [categories, categorySlugs]
-  )
-
-  const collectionsFiltered = useMemo(
-    () => collections.filter(c => collectionSlugs.has(c.slug)),
-    [collections, collectionSlugs]
-  )
-
-  const totalPages = Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE))
-
+  // 2. Sincronizar URL con Estado (Deep linking)
   useEffect(() => {
     const p = new URLSearchParams(location.search)
     startTransition(() => {
       setCategory(p.get("category"))
       setCollection(p.get("collection"))
       setSearch(p.get("search") || "")
-      setPage(1)
     })
   }, [location.search])
 
+  // 3. Cargar Productos cuando cambian filtros
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true)
+      try {
+        const query = buildQueryParams({ category, collection, search: debouncedSearch, inStock, page })
+        const r = await apiFetch<ProductsApiResponse>(`/v1/products?${query}`)
+        setProducts(r.items || [])
+        setTotal(r.total || 0)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProducts()
+  }, [category, collection, debouncedSearch, inStock, page])
+
+  // Reset de página al filtrar
   useEffect(() => {
     setPage(1)
   }, [debouncedSearch, category, collection, inStock])
+
+  const totalPages = Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE))
 
   const clearFilters = () => {
     setSearch("")
@@ -246,55 +130,82 @@ const categorySlugs = useCategorySlugs({
     setCollection(null)
     setInStock(false)
     setPage(1)
+    navigate(location.pathname, { replace: true })
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-slate-950 text-white">
       <Navbar onCartClick={() => setCartOpen(true)} />
-      <div style={{ height: NAVBAR_HEIGHT }} />
-
-      <main className="max-w-7xl mx-auto px-6 pt-10 pb-24">
+      
+      <main className="max-w-7xl mx-auto px-6 pt-24 pb-24">
         <SearchBar value={search} onChange={setSearch} />
 
         <Filters
-          categories={categoriesFiltered}
-          collections={collectionsFiltered}
+          categories={metadata.cats}
+          collections={metadata.cols}
           selectedCategory={category}
           selectedCollection={collection}
           showOnlyInStock={inStock}
           onCategoryChange={setCategory}
           onCollectionChange={(v) => {
             setCollection(v)
-            setCategory(null)
+            setCategory(null) // Limpiar categoría al cambiar colección
           }}
           onStockFilterChange={setInStock}
           onClearFilters={clearFilters}
         />
 
-        <Badge>{total} productos</Badge>
+        <div className="flex items-center gap-2 mb-6">
+          <Badge variant="outline" className="text-slate-400">
+            {loading ? "Cargando..." : `${total} productos encontrados`}
+          </Badge>
+        </div>
 
         <AnimatePresence mode="wait">
           {loading ? (
-            <motion.div className="flex justify-center py-32">
-              <Loader2 className="w-12 h-12 animate-spin" />
+            <motion.div 
+              key="loader"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="flex justify-center py-32"
+            >
+              <Loader2 className="w-10 h-10 animate-spin text-primary" />
             </motion.div>
           ) : (
-            <ProductGrid
-              products={products}
-              onNavigate={(id) => navigate(`/producto/${id}`)}
-              onClearFilters={clearFilters}
-            />
+            <motion.div
+              key="grid"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            >
+              <ProductGrid
+                products={products}
+                onNavigate={(id) => navigate(`/producto/${id}`)}
+                onClearFilters={clearFilters}
+              />
+            </motion.div>
           )}
         </AnimatePresence>
 
         {totalPages > 1 && (
-          <div className="flex justify-center gap-6 mt-10">
-            <Button disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-              <ChevronLeft />
+          <div className="flex justify-center items-center gap-6 mt-12">
+            <Button 
+              variant="secondary"
+              disabled={page === 1} 
+              onClick={() => {
+                setPage(p => p - 1)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" /> Anterior
             </Button>
-            <span>{page} / {totalPages}</span>
-            <Button disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
-              <ChevronRight />
+            <span className="font-mono">{page} / {totalPages}</span>
+            <Button 
+              variant="secondary"
+              disabled={page === totalPages} 
+              onClick={() => {
+                setPage(p => p + 1)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
+            >
+              Siguiente <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
         )}

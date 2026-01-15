@@ -47,6 +47,7 @@ interface FilterState {
    CONSTANTS
 ================================ */
 const PRODUCTS_PER_PAGE = 24
+const METADATA_LIMIT = 100000  // <<<<<<<<<<<<<<<<<<< CLAVE
 const DEBOUNCE_DELAY = 300
 const NAVBAR_HEIGHT = 80
 
@@ -64,6 +65,9 @@ const buildQueryParams = (filters: Partial<FilterState>, withPaging = true) => {
   if (withPaging) {
     p.set("page", String(filters.page ?? 1))
     p.set("limit", String(PRODUCTS_PER_PAGE))
+  } else {
+    p.set("page", "1")
+    p.set("limit", String(METADATA_LIMIT))
   }
 
   return p.toString()
@@ -88,7 +92,7 @@ const useProducts = (filters: FilterState) => {
 
   useEffect(() => {
     setLoading(true)
-    apiFetch<ProductsApiResponse>(`/v1/products?${buildQueryParams(filters)}`)
+    apiFetch<ProductsApiResponse>(`/v1/products?${buildQueryParams(filters, true)}`)
       .then(r => {
         setProducts(r.items || [])
         setTotal(r.total || 0)
@@ -100,23 +104,48 @@ const useProducts = (filters: FilterState) => {
 }
 
 /* ================================
-   FILTERED METADATA (THE FIX)
+   METADATA FROM PRODUCTS (FIX REAL)
 ================================ */
-const useFilteredMetadata = (filters: Omit<FilterState, "page">) => {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [collections, setCollections] = useState<Collection[]>([])
+const useProductSlugs = (filters: Omit<FilterState, "page">) => {
+  const [categorySlugs, setCategorySlugs] = useState<Set<string>>(new Set())
+  const [collectionSlugs, setCollectionSlugs] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const qs = buildQueryParams(filters, false)
 
+    apiFetch<ProductsApiResponse>(`/v1/products?${qs}`).then(res => {
+      const cat = new Set<string>()
+      const col = new Set<string>()
+
+      for (const p of res.items || []) {
+        if (p.categorySlug) cat.add(p.categorySlug)
+        if (p.collectionSlug) col.add(p.collectionSlug)
+      }
+
+      setCategorySlugs(cat)
+      setCollectionSlugs(col)
+    })
+  }, [filters])
+
+  return { categorySlugs, collectionSlugs }
+}
+
+/* ================================
+   METADATA
+================================ */
+const useMetadata = () => {
+  const [categories, setCategories] = useState<Category[]>([])
+  const [collections, setCollections] = useState<Collection[]>([])
+
+  useEffect(() => {
     Promise.all([
-      apiFetch<Category[]>(`/v1/categories/with-products?${qs}`),
-      apiFetch<Collection[]>(`/v1/collections/with-products?${qs}`),
+      apiFetch<Category[]>("/v1/categories"),
+      apiFetch<Collection[]>("/v1/collections"),
     ]).then(([cats, cols]) => {
       setCategories(cats || [])
       setCollections(cols || [])
     })
-  }, [filters])
+  }, [])
 
   return { categories, collections }
 }
@@ -127,7 +156,7 @@ const useFilteredMetadata = (filters: Omit<FilterState, "page">) => {
 const Catalog = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const [_, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
 
   const [search, setSearch] = useState("")
   const [category, setCategory] = useState<string | null>(null)
@@ -144,13 +173,24 @@ const Catalog = () => {
   )
 
   const { products, total, loading } = useProducts(filters)
+  const { categories, collections } = useMetadata()
 
-  const { categories, collections } = useFilteredMetadata({
+  const { categorySlugs, collectionSlugs } = useProductSlugs({
     category,
     collection,
     search: debouncedSearch,
     inStock,
   })
+
+  const visibleCategories = useMemo(
+    () => categories.filter(c => categorySlugs.has(c.slug)),
+    [categories, categorySlugs]
+  )
+
+  const visibleCollections = useMemo(
+    () => collections.filter(c => collectionSlugs.has(c.slug)),
+    [collections, collectionSlugs]
+  )
 
   const totalPages = Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE))
 
@@ -173,8 +213,8 @@ const Catalog = () => {
         <SearchBar value={search} onChange={setSearch} />
 
         <Filters
-          categories={categories}
-          collections={collections}
+          categories={visibleCategories}
+          collections={visibleCollections}
           selectedCategory={category}
           selectedCollection={collection}
           showOnlyInStock={inStock}

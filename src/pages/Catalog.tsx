@@ -187,19 +187,21 @@ const Catalog = () => {
   const { products, total, loading } = useProducts(filters)
   const { categories, collections } = useMetadata()
 
-  // 👇 CATEGORÍAS NO DEPENDEN DE COLECCIÓN
+  // 🔹 Categorías NO dependen de colección
   const categorySlugs = useCategorySlugs({ search: debouncedSearch, inStock })
 
-  // 👇 COLECCIONES SÍ DEPENDEN DE CATEGORÍA
+  // 🔹 Colecciones SÍ dependen de categoría
   const collectionSlugs = useCollectionSlugs({ category, search: debouncedSearch, inStock })
 
+  // ✅ SOLO categorías que tienen al menos 1 producto
   const categoriesWithState = useMemo(
-    () => categories.map(c => ({ ...c, hasProducts: categorySlugs.has(c.slug) })),
+    () => categories.filter(c => categorySlugs.has(c.slug)),
     [categories, categorySlugs]
   )
 
+  // ✅ SOLO colecciones que tienen al menos 1 producto
   const collectionsWithState = useMemo(
-    () => collections.map(c => ({ ...c, hasProducts: collectionSlugs.has(c.slug) })),
+    () => collections.filter(c => collectionSlugs.has(c.slug)),
     [collections, collectionSlugs]
   )
 

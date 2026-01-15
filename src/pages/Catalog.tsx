@@ -104,20 +104,15 @@ const useProducts = (filters: FilterState) => {
 }
 
 /* ================================
-   SLUG METADATA (UX LOGIC)
-   ✅ Categories depend on: search + inStock + collection
-   ✅ Collections depend on: search + inStock + category
+   CATEGORY SLUGS
+   Categories ONLY depend on collection
 ================================ */
-const useCategorySlugs = (filters: {
-  search: string
-  inStock: boolean
-  collection: string | null
-}) => {
+const useCategorySlugs = (collection: string | null) => {
   const [slugs, setSlugs] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     apiFetch<ProductsApiResponse>(
-      `/v1/products?${buildQueryParams({ ...filters }, false)}`
+      `/v1/products?${buildQueryParams({ collection }, false)}`
     ).then(r => {
       const s = new Set<string>()
       for (const p of r.items || []) {
@@ -125,11 +120,15 @@ const useCategorySlugs = (filters: {
       }
       setSlugs(s)
     })
-  }, [filters.search, filters.inStock, filters.collection])
+  }, [collection])
 
   return slugs
 }
 
+/* ================================
+   COLLECTION SLUGS
+   Collections depend on category + search + stock
+================================ */
 const useCollectionSlugs = (filters: {
   category: string | null
   search: string
@@ -139,7 +138,7 @@ const useCollectionSlugs = (filters: {
 
   useEffect(() => {
     apiFetch<ProductsApiResponse>(
-      `/v1/products?${buildQueryParams({ ...filters }, false)}`
+      `/v1/products?${buildQueryParams(filters, false)}`
     ).then(r => {
       const s = new Set<string>()
       for (const p of r.items || []) {
@@ -197,27 +196,19 @@ const Catalog = () => {
   const { products, total, loading } = useProducts(filters)
   const { categories, collections } = useMetadata()
 
-  // ✅ Categories now depend on collection too (fix for "Duplo + SIMIL = 0")
-  const categorySlugs = useCategorySlugs({
-    search: debouncedSearch,
-    inStock,
-    collection,
-  })
+  const categorySlugs = useCategorySlugs(collection)
 
-  // ✅ Collections depend on category (OK)
   const collectionSlugs = useCollectionSlugs({
     category,
     search: debouncedSearch,
     inStock,
   })
 
-  // ✅ Only show categories that have at least 1 product in the CURRENT CONTEXT
   const categoriesFiltered = useMemo(
     () => categories.filter(c => categorySlugs.has(c.slug)),
     [categories, categorySlugs]
   )
 
-  // ✅ Only show collections that have at least 1 product in the CURRENT CONTEXT
   const collectionsFiltered = useMemo(
     () => collections.filter(c => collectionSlugs.has(c.slug)),
     [collections, collectionSlugs]
@@ -235,7 +226,6 @@ const Catalog = () => {
     })
   }, [location.search])
 
-  // Reset page when major filters change
   useEffect(() => {
     setPage(1)
   }, [debouncedSearch, category, collection, inStock])
@@ -265,7 +255,7 @@ const Catalog = () => {
           onCategoryChange={setCategory}
           onCollectionChange={(v) => {
             setCollection(v)
-            setCategory(null) // keep your original rule
+            setCategory(null)
           }}
           onStockFilterChange={setInStock}
           onClearFilters={clearFilters}

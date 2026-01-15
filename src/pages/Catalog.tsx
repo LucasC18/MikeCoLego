@@ -1,12 +1,16 @@
 import { useEffect, useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useNavigate } from "react-router-dom"
+
 import Navbar from "@/components/Navbar"
 import SearchBar from "@/components/SearchBar"
 import Filters from "@/components/Filters"
 import ProductGrid from "@/components/ProductGrid"
 import CartDrawer from "@/components/CartDrawer"
+
 import { apiFetch } from "@/config/api"
 import { Product } from "@/types/product"
+
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -64,6 +68,8 @@ const Pagination = ({
 /* ======================= MAIN ======================= */
 
 const Catalog = () => {
+  const navigate = useNavigate()
+
   const [products, setProducts] = useState<Product[]>([])
   const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -78,9 +84,17 @@ const Catalog = () => {
   const [showOnlyInStock, setShowOnlyInStock] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [isCartOpen, setIsCartOpen] = useState(false)
+
   const [, startTransition] = useTransition()
 
-  /* Debounce */
+  /* ======================= NAVIGATION ======================= */
+
+  const handleNavigateToProduct = (id: string) => {
+    navigate(`/producto/${id}`)
+  }
+
+  /* ======================= DEBOUNCE ======================= */
+
   useEffect(() => {
     const id = setTimeout(() => {
       setDebouncedQuery(searchQuery)
@@ -89,13 +103,20 @@ const Catalog = () => {
     return () => clearTimeout(id)
   }, [searchQuery])
 
-  /* Load categories + collections */
+  /* ======================= LOAD META ======================= */
+
   useEffect(() => {
-    apiFetch<Category[]>("/v1/categories").then(setCategories).catch(() => setCategories([]))
-    apiFetch<Collection[]>("/v1/collections").then(setCollections).catch(() => setCollections([]))
+    apiFetch<Category[]>("/v1/categories")
+      .then(setCategories)
+      .catch(() => setCategories([]))
+
+    apiFetch<Collection[]>("/v1/collections")
+      .then(setCollections)
+      .catch(() => setCollections([]))
   }, [])
 
-  /* Load products */
+  /* ======================= LOAD PRODUCTS ======================= */
+
   useEffect(() => {
     const params = new URLSearchParams()
 
@@ -109,7 +130,9 @@ const Catalog = () => {
 
     setIsLoading(true)
 
-    apiFetch<{ items: Product[]; total: number }>(`/v1/products?${params.toString()}`)
+    apiFetch<{ items: Product[]; total: number }>(
+      `/v1/products?${params.toString()}`
+    )
       .then((res) => {
         setProducts(res.items)
         setTotal(res.total)
@@ -123,29 +146,22 @@ const Catalog = () => {
 
   const totalPages = Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE))
 
-  /* ============================
-     FILTROS INTELIGENTES
-  ============================ */
+  /* ======================= FILTER LOGIC ======================= */
 
-  /* Colecciones que tienen productos */
   const visibleCollections = collections.filter((col) =>
     products.some((p) => p.collection === col.slug)
   )
 
-  /* Categorías que tienen productos */
   const visibleCategories = categories.filter((cat) =>
     products.some((p) => p.category === cat.slug)
   )
 
-  /* Hasbro 3.75 solo cuando la colección es Star Wars */
   const filteredCategories =
     selectedCollection === "star-wars"
       ? visibleCategories
       : visibleCategories.filter((c) => c.slug !== "hasbro-375")
 
-  /* ============================
-     HANDLERS
-  ============================ */
+  /* ======================= HANDLERS ======================= */
 
   const handleCategoryChange = (slug: string | null) => {
     startTransition(() => {
@@ -171,9 +187,7 @@ const Catalog = () => {
     setCurrentPage(1)
   }
 
-  /* ============================
-     UI
-  ============================ */
+  /* ======================= UI ======================= */
 
   return (
     <div className="min-h-screen bg-background">
@@ -199,11 +213,30 @@ const Catalog = () => {
           <Badge>{total} productos</Badge>
         </div>
 
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {isLoading ? (
-            <motion.div key="loading">Cargando...</motion.div>
+            <motion.div
+              key="loading"
+              className="text-center py-20"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              Cargando…
+            </motion.div>
           ) : (
-            <ProductGrid products={products} onClearFilters={handleClearFilters} />
+            <motion.div
+              key="grid"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <ProductGrid
+                products={products}
+                onClearFilters={handleClearFilters}
+                onNavigate={handleNavigateToProduct}
+              />
+            </motion.div>
           )}
         </AnimatePresence>
 

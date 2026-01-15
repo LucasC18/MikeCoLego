@@ -7,14 +7,10 @@ import { Sparkles, ChevronDown, ArrowRight } from "lucide-react"
 import heroImage from "@/assets/hero-starwars.jpg"
 import { apiFetch } from "@/config/api"
 
-/* =======================
-   Tipado de colección
-======================= */
 interface Collection {
   id: string
   name: string
   slug: string
-  imageUrl?: string
   productsCount: number
 }
 
@@ -24,15 +20,18 @@ const Home = () => {
   const [isLoadingCollections, setIsLoadingCollections] = useState(true)
 
   /* =======================
-     Fetch colecciones (FIX REAL)
+     Load collections
   ======================= */
   useEffect(() => {
     async function loadCollections() {
       try {
-        const res = await apiFetch<Collection[]>("/v1/collections")
+        const res = await apiFetch<{ items: Collection[] }>("/v1/collections")
 
-        // Mostrar solo las que tienen productos
-        setCollections(res.filter(c => c.productsCount > 0))
+        const valid = (res.items || [])
+          .filter((c) => c.productsCount > 0)
+          .sort((a, b) => b.productsCount - a.productsCount)
+
+        setCollections(valid)
       } catch (err) {
         console.error("Error cargando colecciones", err)
         setCollections([])
@@ -87,10 +86,32 @@ const Home = () => {
               <span className="text-gradient">Collector71</span>
             </h1>
 
-            <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10">
+            <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-8">
               Explorá nuestros personajes organizados por colección. Elegí una y
               encontrá tu próximo favorito.
             </p>
+
+            {/* ===== HERO COLLECTION BUTTONS ===== */}
+            {!isLoadingCollections && collections.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="flex flex-wrap justify-center gap-4 mb-10"
+              >
+                {collections.slice(0, 2).map((c) => (
+                  <Link
+                    key={c.id}
+                    to={`/catalogo?collection=${c.slug}`}
+                    className="px-10 py-5 rounded-xl font-display font-bold text-lg
+                               glass-card neon-border hover-glow transition-all
+                               text-primary"
+                  >
+                    {c.name}
+                  </Link>
+                ))}
+              </motion.div>
+            )}
 
             <motion.button
               onClick={scrollToCollections}
@@ -121,45 +142,15 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ================= COLECCIONES ================= */}
-      <main id="destacados" className="container mx-auto px-4 py-20 bg-grid">
-        <div className="text-center mb-12">
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-            <span className="text-foreground">Explorá por </span>
-            <span className="text-gradient">Colección</span>
-          </h2>
-          <p className="text-muted-foreground">
-            Elegí una colección para ver sus personajes disponibles
-          </p>
-        </div>
-
-        {isLoadingCollections ? (
-          <p className="text-center text-muted-foreground">
-            Cargando colecciones...
-          </p>
-        ) : (
-          <div className="flex flex-wrap justify-center gap-4">
-            {collections.map((c) => (
-              <Link
-                key={c.id}
-                to={`/catalogo?collection=${c.slug}`}
-                className="px-6 py-3 glass-card neon-border rounded-full font-display font-semibold text-primary hover-glow transition-all"
-              >
-                {c.name}
-              </Link>
-            ))}
-          </div>
-        )}
-
-        <div className="flex justify-center mt-12">
-          <Link
-            to="/catalogo"
-            className="inline-flex items-center gap-2 px-8 py-4 glass-card neon-border rounded-lg font-display font-semibold text-primary hover-glow transition-all"
-          >
-            Ver Catálogo Completo
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-        </div>
+      {/* ================= CTA BOTTOM ================= */}
+      <main id="destacados" className="container mx-auto px-4 py-20 bg-grid text-center">
+        <Link
+          to="/catalogo"
+          className="inline-flex items-center gap-2 px-10 py-5 glass-card neon-border rounded-lg font-display font-semibold text-primary hover-glow transition-all"
+        >
+          Ver Catálogo Completo
+          <ArrowRight className="w-5 h-5" />
+        </Link>
       </main>
 
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />

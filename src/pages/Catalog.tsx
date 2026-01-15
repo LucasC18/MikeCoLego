@@ -1,192 +1,557 @@
-import { useEffect, useMemo, useState, useTransition } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { useNavigate, useLocation } from "react-router-dom"
+import { useEffect, useMemo, useState, useTransition, useCallback, useRef } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useNavigate, useLocation } from "react-router-dom";
 
-import Navbar from "@/components/Navbar"
-import SearchBar from "@/components/SearchBar"
-import Filters from "@/components/Filters"
-import ProductGrid from "@/components/ProductGrid"
-import CartDrawer from "@/components/CartDrawer"
+import Navbar from "@/components/Navbar";
+import SearchBar from "@/components/SearchBar";
+import Filters from "@/components/Filters";
+import ProductGrid from "@/components/ProductGrid";
+import CartDrawer from "@/components/CartDrawer";
 
-import { apiFetch } from "@/config/api"
-import { Product } from "@/types/product"
+import { apiFetch } from "@/config/api";
+import { Product } from "@/types/product";
 
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
-const PRODUCTS_PER_PAGE = 24
-const FILTERS_LIMIT = 1000 // para calcular categorías/colecciones sin depender de la página
-
-type Category = {
-  id: string
-  name: string
-  slug: string
+/* ================================
+   TYPES & INTERFACES
+================================= */
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
 }
 
-type Collection = {
-  id: string
-  name: string
-  slug: string
+interface Collection {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
 }
 
-const Catalog = () => {
-  const navigate = useNavigate()
-  const location = useLocation()
+interface ProductsApiResponse {
+  items: Product[];
+  total: number;
+  page?: number;
+  limit?: number;
+}
 
-  const [products, setProducts] = useState<Product[]>([])
-  const [allFilteredProducts, setAllFilteredProducts] = useState<Product[]>([])
-  const [total, setTotal] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
+interface ApiError extends Error {
+  status?: number;
+  code?: string;
+}
 
-  const [categories, setCategories] = useState<Category[]>([])
-  const [collections, setCollections] = useState<Collection[]>([])
+interface FilterState {
+  category: string | null;
+  collection: string | null;
+  search: string;
+  inStock: boolean;
+  page: number;
+}
 
-  const [searchQuery, setSearchQuery] = useState("")
-  const [debouncedQuery, setDebouncedQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
-  const [showOnlyInStock, setShowOnlyInStock] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [isCartOpen, setIsCartOpen] = useState(false)
+/* ================================
+   CONSTANTS
+================================= */
+const PRODUCTS_PER_PAGE = 24;
+const FILTERS_LIMIT = 1000;
+const DEBOUNCE_DELAY = 300;
+const NAVBAR_HEIGHT = 80;
 
-  const [, startTransition] = useTransition()
+/* ================================
+   HELPERS & UTILITIES
+================================= */
+const isApiError = (error: unknown): error is ApiError => {
+  return error instanceof Error;
+};
 
-  const handleNavigateToProduct = (id: string) => {
-    navigate(`/producto/${id}`)
+const extractErrorMessage = (error: unknown): string => {
+  if (isApiError(error)) {
+    return error.message || "Error al cargar datos";
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  return "Error desconocido";
+};
+
+const getSafeAreaStyle = (): React.CSSProperties => {
+  return {
+    paddingTop: "env(safe-area-inset-top)",
+    paddingBottom: "env(safe-area-inset-bottom)",
+    paddingLeft: "env(safe-area-inset-left)",
+    paddingRight: "env(safe-area-inset-right)",
+  };
+};
+
+const buildQueryParams = (filters: FilterState, withPaging: boolean): string => {
+  const params = new URLSearchParams();
+
+  if (filters.category) params.set("category", filters.category);
+  if (filters.collection) params.set("collection", filters.collection);
+  if (filters.search) params.set("search", filters.search);
+  if (filters.inStock) params.set("inStock", "true");
+
+  if (withPaging) {
+    params.set("page", String(filters.page));
+    params.set("limit", String(PRODUCTS_PER_PAGE));
+  } else {
+    params.set("limit", String(FILTERS_LIMIT));
+    params.set("page", "1");
   }
 
-  /* ======================= DEBOUNCE ======================= */
-  useEffect(() => {
-    const id = setTimeout(() => {
-      setDebouncedQuery(searchQuery)
-      setCurrentPage(1)
-    }, 300)
-    return () => clearTimeout(id)
-  }, [searchQuery])
+  return params.toString();
+};
 
-  /* ======================= LOAD META ======================= */
-  useEffect(() => {
-    apiFetch<Category[]>("/v1/categories").then(setCategories).catch(() => setCategories([]))
-    apiFetch<Collection[]>("/v1/collections").then(setCollections).catch(() => setCollections([]))
-  }, [])
+const scrollToTop = (smooth: boolean = true): void => {
+  window.scrollTo({
+    top: 0,
+    behavior: smooth ? "smooth" : "auto",
+  });
+};
 
-  /* ======================= READ URL PARAMS (IMPORTANT) ======================= */
-  useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    const urlCategory = params.get("category")
-    const urlCollection = params.get("collection")
-    const urlSearch = params.get("search")
+/* ================================
+   CUSTOM HOOKS
+================================= */
+const useDebounce = <T,>(value: T, delay: number): T => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
-    // Solo seteamos si vienen en URL (así no pisamos cambios del usuario)
-    startTransition(() => {
-      if (urlCollection !== null) setSelectedCollection(urlCollection || null)
-      if (urlCategory !== null) setSelectedCategory(urlCategory || null)
-      if (urlSearch !== null) {
-        setSearchQuery(urlSearch || "")
-        setDebouncedQuery(urlSearch || "")
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+const useMetadata = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
-      setCurrentPage(1)
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search])
 
-  /* ======================= FILTER PARAMS ======================= */
-  const buildParams = (withPaging: boolean) => {
-    const params = new URLSearchParams()
+      abortControllerRef.current = new AbortController();
+      setIsLoading(true);
 
-    if (selectedCategory) params.set("category", selectedCategory)
-    if (selectedCollection) params.set("collection", selectedCollection)
-    if (debouncedQuery) params.set("search", debouncedQuery)
-    if (showOnlyInStock) params.set("inStock", "true")
+      try {
+        const [categoriesData, collectionsData] = await Promise.all([
+          apiFetch<Category[]>("/v1/categories", {
+            signal: abortControllerRef.current.signal,
+          }),
+          apiFetch<Collection[]>("/v1/collections", {
+            signal: abortControllerRef.current.signal,
+          }),
+        ]);
 
-    if (withPaging) {
-      params.set("page", String(currentPage))
-      params.set("limit", String(PRODUCTS_PER_PAGE))
+        setCategories(categoriesData || []);
+        setCollections(collectionsData || []);
+      } catch (err: unknown) {
+        if (isApiError(err) && err.name === "AbortError") {
+          return;
+        }
+        setCategories([]);
+        setCollections([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMetadata();
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  return { categories, collections, isLoading };
+};
+
+const useProducts = (filters: FilterState) => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const fetchProducts = useCallback(async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
 
-    return params.toString()
-  }
+    abortControllerRef.current = new AbortController();
+    setIsLoading(true);
+    setError(null);
 
-  /* ======================= LOAD PRODUCTS (PAGE) ======================= */
+    try {
+      const queryString = buildQueryParams(filters, true);
+      const response = await apiFetch<ProductsApiResponse>(
+        `/v1/products?${queryString}`,
+        {
+          signal: abortControllerRef.current.signal,
+        }
+      );
+
+      setProducts(response.items || []);
+      setTotal(response.total || 0);
+    } catch (err: unknown) {
+      if (isApiError(err) && err.name === "AbortError") {
+        return;
+      }
+      const errorMessage = extractErrorMessage(err);
+      setError(errorMessage);
+      setProducts([]);
+      setTotal(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters]);
+
   useEffect(() => {
-    setIsLoading(true)
+    fetchProducts();
 
-    apiFetch<{ items: Product[]; total: number }>(`/v1/products?${buildParams(true)}`)
-      .then((res) => {
-        setProducts(res.items || [])
-        setTotal(res.total || 0)
-      })
-      .catch(() => {
-        setProducts([])
-        setTotal(0)
-      })
-      .finally(() => setIsLoading(false))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, selectedCollection, debouncedQuery, showOnlyInStock, currentPage])
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchProducts]);
 
-  /* ======================= LOAD PRODUCTS (FOR FILTERS) ======================= */
+  return { products, total, isLoading, error, refetch: fetchProducts };
+};
+
+const useAllFilteredProducts = (filters: Omit<FilterState, "page">) => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const fetchProducts = useCallback(async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    abortControllerRef.current = new AbortController();
+
+    try {
+      const queryString = buildQueryParams({ ...filters, page: 1 }, false);
+      const response = await apiFetch<ProductsApiResponse>(
+        `/v1/products?${queryString}`,
+        {
+          signal: abortControllerRef.current.signal,
+        }
+      );
+
+      setProducts(response.items || []);
+    } catch (err: unknown) {
+      if (isApiError(err) && err.name === "AbortError") {
+        return;
+      }
+      setProducts([]);
+    }
+  }, [filters]);
+
   useEffect(() => {
-    // Misma query, pero sin paginar, con limit alto (si backend lo limita por default)
-    const params = new URLSearchParams(buildParams(false))
-    params.set("limit", String(FILTERS_LIMIT))
-    params.set("page", "1")
+    fetchProducts();
 
-    apiFetch<{ items: Product[] }>(`/v1/products?${params.toString()}`)
-      .then((res) => setAllFilteredProducts(res.items || []))
-      .catch(() => setAllFilteredProducts([]))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, selectedCollection, debouncedQuery, showOnlyInStock])
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchProducts]);
 
-  const totalPages = Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE))
+  return products;
+};
 
-  /* ======================= FILTERS ======================= */
-  const visibleCollections = collections.filter((col) =>
-    allFilteredProducts.some((p) => p.collectionSlug === col.slug)
-  )
+const useViewportHeight = () => {
+  useEffect(() => {
+    const updateVh = () => {
+      const vh = window.innerHeight;
+      document.documentElement.style.setProperty("--vh", `${vh * 0.01}px`);
+    };
 
-  const visibleCategories = categories.filter((cat) =>
-    allFilteredProducts.some((p) => p.categorySlug === cat.slug)
-  )
+    updateVh();
+    window.addEventListener("resize", updateVh);
+    window.addEventListener("orientationchange", updateVh);
 
-  /* ======================= HANDLERS ======================= */
-  const handleCategoryChange = (slug: string | null) => {
-    startTransition(() => {
-      setSelectedCategory(slug)
-      setCurrentPage(1)
-    })
-  }
+    return () => {
+      window.removeEventListener("resize", updateVh);
+      window.removeEventListener("orientationchange", updateVh);
+    };
+  }, []);
+};
 
-  const handleCollectionChange = (slug: string | null) => {
-    startTransition(() => {
-      setSelectedCollection(slug)
-      setSelectedCategory(null)
-      setCurrentPage(1)
-    })
-  }
+/* ================================
+   SUB-COMPONENTS
+================================= */
+const LoadingState = () => (
+  <motion.div
+    key="loading"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="flex flex-col items-center justify-center py-32"
+  >
+    <Loader2 className="w-16 h-16 text-primary animate-spin mb-6" />
+    <p className="text-slate-300 text-xl font-medium">Cargando productos...</p>
+  </motion.div>
+);
 
-  const handleClearFilters = () => {
-    setSearchQuery("")
-    setDebouncedQuery("")
-    setSelectedCategory(null)
-    setSelectedCollection(null)
-    setShowOnlyInStock(false)
-    setCurrentPage(1)
-  }
+const ProductsContainer = ({
+  products,
+  onClearFilters,
+  onNavigate,
+}: {
+  products: Product[];
+  onClearFilters: () => void;
+  onNavigate: (id: string) => void;
+}) => (
+  <motion.div
+    key="products"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    transition={{ duration: 0.3 }}
+  >
+    <ProductGrid
+      products={products}
+      onClearFilters={onClearFilters}
+      onNavigate={onNavigate}
+    />
+  </motion.div>
+);
 
-  /* ======================= UI ======================= */
+const ProductCountBadge = ({ count }: { count: number }) => (
+  <div className="mb-8 flex justify-center md:justify-start">
+    <Badge className="text-base px-4 py-2 bg-slate-800/80 text-slate-200 border-slate-700 shadow-lg">
+      {count} {count === 1 ? "producto" : "productos"}
+    </Badge>
+  </div>
+);
+
+const PaginationControls = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) => {
+  const prefersReducedMotion = useReducedMotion();
+
+  const handlePrevious = useCallback(() => {
+    if (currentPage > 1) {
+      onPageChange(currentPage - 1);
+      scrollToTop(true);
+    }
+  }, [currentPage, onPageChange]);
+
+  const handleNext = useCallback(() => {
+    if (currentPage < totalPages) {
+      onPageChange(currentPage + 1);
+      scrollToTop(true);
+    }
+  }, [currentPage, totalPages, onPageChange]);
+
+  if (totalPages <= 1) return null;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-      <Navbar onCartClick={() => setIsCartOpen(true)} />
-      <div className="h-20" />
+    <motion.div
+      initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+      animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+      transition={prefersReducedMotion ? undefined : { duration: 0.4 }}
+      className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-16"
+    >
+      <Button
+        disabled={currentPage === 1}
+        onClick={handlePrevious}
+        className="min-h-[52px] min-w-[52px] px-6 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg touch-manipulation"
+        size="lg"
+        aria-label="Página anterior"
+      >
+        <ChevronLeft className="w-6 h-6" />
+      </Button>
+
+      <div className="flex items-center gap-3 px-6 py-3 bg-slate-800/80 border border-slate-700 rounded-xl shadow-lg">
+        <span className="text-slate-200 font-semibold text-lg">
+          Página <span className="text-primary">{currentPage}</span> de {totalPages}
+        </span>
+      </div>
+
+      <Button
+        disabled={currentPage === totalPages}
+        onClick={handleNext}
+        className="min-h-[52px] min-w-[52px] px-6 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg touch-manipulation"
+        size="lg"
+        aria-label="Página siguiente"
+      >
+        <ChevronRight className="w-6 h-6" />
+      </Button>
+    </motion.div>
+  );
+};
+
+/* ================================
+   MAIN COMPONENT
+================================= */
+const Catalog = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isPending, startTransition] = useTransition();
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
+  const [showOnlyInStock, setShowOnlyInStock] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  const debouncedSearch = useDebounce(searchQuery, DEBOUNCE_DELAY);
+  const { categories, collections } = useMetadata();
+
+  useViewportHeight();
+
+  const filters = useMemo<FilterState>(
+    () => ({
+      category: selectedCategory,
+      collection: selectedCollection,
+      search: debouncedSearch,
+      inStock: showOnlyInStock,
+      page: currentPage,
+    }),
+    [selectedCategory, selectedCollection, debouncedSearch, showOnlyInStock, currentPage]
+  );
+
+  const { products, total, isLoading } = useProducts(filters);
+
+  const allFilteredProducts = useAllFilteredProducts({
+    category: selectedCategory,
+    collection: selectedCollection,
+    search: debouncedSearch,
+    inStock: showOnlyInStock,
+  });
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE)),
+    [total]
+  );
+
+  const visibleCollections = useMemo(
+    () =>
+      collections.filter((col) =>
+        allFilteredProducts.some((p) => p.collectionSlug === col.slug)
+      ),
+    [collections, allFilteredProducts]
+  );
+
+  const visibleCategories = useMemo(
+    () =>
+      categories.filter((cat) =>
+        allFilteredProducts.some((p) => p.categorySlug === cat.slug)
+      ),
+    [categories, allFilteredProducts]
+  );
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const urlCategory = params.get("category");
+    const urlCollection = params.get("collection");
+    const urlSearch = params.get("search");
+
+    startTransition(() => {
+      if (urlCollection !== null) setSelectedCollection(urlCollection || null);
+      if (urlCategory !== null) setSelectedCategory(urlCategory || null);
+      if (urlSearch !== null) {
+        setSearchQuery(urlSearch || "");
+      }
+      setCurrentPage(1);
+    });
+  }, [location.search]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
+
+  const handleNavigateToProduct = useCallback(
+    (id: string) => {
+      navigate(`/producto/${id}`);
+    },
+    [navigate]
+  );
+
+  const handleCategoryChange = useCallback((slug: string | null) => {
+    startTransition(() => {
+      setSelectedCategory(slug);
+      setCurrentPage(1);
+    });
+  }, []);
+
+  const handleCollectionChange = useCallback((slug: string | null) => {
+    startTransition(() => {
+      setSelectedCollection(slug);
+      setSelectedCategory(null);
+      setCurrentPage(1);
+    });
+  }, []);
+
+  const handleStockFilterChange = useCallback((inStock: boolean) => {
+    startTransition(() => {
+      setShowOnlyInStock(inStock);
+      setCurrentPage(1);
+    });
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    startTransition(() => {
+      setSearchQuery("");
+      setSelectedCategory(null);
+      setSelectedCollection(null);
+      setShowOnlyInStock(false);
+      setCurrentPage(1);
+    });
+  }, []);
+
+  const handlePageChange = useCallback((page: number) => {
+    startTransition(() => {
+      setCurrentPage(page);
+    });
+  }, []);
+
+  const handleCartOpen = useCallback(() => {
+    setIsCartOpen(true);
+  }, []);
+
+  const handleCartClose = useCallback(() => {
+    setIsCartOpen(false);
+  }, []);
+
+  return (
+    <div
+      className="min-h-[100dvh] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950"
+      style={getSafeAreaStyle()}
+    >
+      <Navbar onCartClick={handleCartOpen} />
+      <div style={{ height: `${NAVBAR_HEIGHT}px` }} />
 
       <main className="max-w-7xl mx-auto px-6 pt-10 pb-24">
-        {/* Search Bar */}
         <div className="mb-10">
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
         </div>
 
-        {/* Filters */}
         <div className="mb-10">
           <Filters
             collections={visibleCollections}
@@ -196,84 +561,37 @@ const Catalog = () => {
             onCategoryChange={handleCategoryChange}
             onCollectionChange={handleCollectionChange}
             showOnlyInStock={showOnlyInStock}
-            onStockFilterChange={setShowOnlyInStock}
+            onStockFilterChange={handleStockFilterChange}
             onClearFilters={handleClearFilters}
           />
         </div>
 
-        {/* Badge de productos */}
-        <div className="mb-8 flex justify-center md:justify-start">
-          <Badge className="text-base px-4 py-2 bg-slate-800/80 text-slate-200 border-slate-700 shadow-lg">
-            {total} {total === 1 ? "producto" : "productos"}
-          </Badge>
-        </div>
+        <ProductCountBadge count={total} />
 
-        {/* Products Grid */}
         <AnimatePresence mode="wait">
           {isLoading ? (
-            <motion.div 
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-32"
-            >
-              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6"></div>
-              <p className="text-slate-300 text-xl font-medium">Cargando productos...</p>
-            </motion.div>
+            <LoadingState />
           ) : (
-            <motion.div
-              key="products"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <ProductGrid
-                products={products}
-                onClearFilters={handleClearFilters}
-                onNavigate={handleNavigateToProduct}
-              />
-            </motion.div>
+            <ProductsContainer
+              products={products}
+              onClearFilters={handleClearFilters}
+              onNavigate={handleNavigateToProduct}
+            />
           )}
         </AnimatePresence>
 
-        {/* Pagination */}
-        {totalPages > 1 && !isLoading && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-16"
-          >
-            <Button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
-              className="min-h-[52px] min-w-[52px] px-6 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg"
-              size="lg"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </Button>
-            
-            <div className="flex items-center gap-3 px-6 py-3 bg-slate-800/80 border border-slate-700 rounded-xl shadow-lg">
-              <span className="text-slate-200 font-semibold text-lg">
-                Página <span className="text-primary">{currentPage}</span> de {totalPages}
-              </span>
-            </div>
-            
-            <Button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(currentPage + 1)}
-              className="min-h-[52px] min-w-[52px] px-6 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg"
-              size="lg"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </Button>
-          </motion.div>
+        {!isLoading && (
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         )}
       </main>
 
-      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      <CartDrawer isOpen={isCartOpen} onClose={handleCartClose} />
     </div>
-  )
-}
+  );
+};
 
-export default Catalog
+export default Catalog;

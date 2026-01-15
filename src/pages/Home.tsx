@@ -11,7 +11,6 @@ interface Collection {
   id: string
   name: string
   slug: string
-  productsCount: number
 }
 
 const Home = () => {
@@ -25,13 +24,8 @@ const Home = () => {
   useEffect(() => {
     async function loadCollections() {
       try {
-        const res = await apiFetch<{ items: Collection[] }>("/v1/collections")
-
-        const valid = (res.items || [])
-          .filter((c) => c.productsCount > 0)
-          .sort((a, b) => b.productsCount - a.productsCount)
-
-        setCollections(valid)
+        const res = await apiFetch<Collection[]>("/v1/collections")
+        setCollections(res || [])
       } catch (err) {
         console.error("Error cargando colecciones", err)
         setCollections([])

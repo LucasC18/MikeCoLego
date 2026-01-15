@@ -29,48 +29,11 @@ type Collection = {
   slug: string
 }
 
-/* ======================= PAGINATION ======================= */
-
-interface PaginationProps {
-  currentPage: number
-  totalPages: number
-  onPageChange: (page: number) => void
-  isLoading: boolean
-}
-
-const Pagination = ({
-  currentPage,
-  totalPages,
-  onPageChange,
-  isLoading,
-}: PaginationProps) => (
-  <motion.div className="flex justify-center gap-2 mt-12">
-    <Button
-      disabled={currentPage === 1 || isLoading}
-      onClick={() => onPageChange(currentPage - 1)}
-    >
-      <ChevronLeft />
-    </Button>
-
-    <span className="px-4 py-2 font-semibold">
-      {currentPage} / {totalPages}
-    </span>
-
-    <Button
-      disabled={currentPage === totalPages || isLoading}
-      onClick={() => onPageChange(currentPage + 1)}
-    >
-      <ChevronRight />
-    </Button>
-  </motion.div>
-)
-
-/* ======================= MAIN ======================= */
-
 const Catalog = () => {
   const navigate = useNavigate()
 
   const [products, setProducts] = useState<Product[]>([])
+  const [allFilteredProducts, setAllFilteredProducts] = useState<Product[]>([])
   const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -87,14 +50,11 @@ const Catalog = () => {
 
   const [, startTransition] = useTransition()
 
-  /* ======================= NAVIGATION ======================= */
-
   const handleNavigateToProduct = (id: string) => {
     navigate(`/producto/${id}`)
   }
 
   /* ======================= DEBOUNCE ======================= */
-
   useEffect(() => {
     const id = setTimeout(() => {
       setDebouncedQuery(searchQuery)
@@ -104,20 +64,13 @@ const Catalog = () => {
   }, [searchQuery])
 
   /* ======================= LOAD META ======================= */
-
   useEffect(() => {
-    apiFetch<Category[]>("/v1/categories")
-      .then(setCategories)
-      .catch(() => setCategories([]))
-
-    apiFetch<Collection[]>("/v1/collections")
-      .then(setCollections)
-      .catch(() => setCollections([]))
+    apiFetch<Category[]>("/v1/categories").then(setCategories)
+    apiFetch<Collection[]>("/v1/collections").then(setCollections)
   }, [])
 
-  /* ======================= LOAD PRODUCTS ======================= */
-
-  useEffect(() => {
+  /* ======================= FILTER PARAMS ======================= */
+  const buildParams = (withPaging: boolean) => {
     const params = new URLSearchParams()
 
     if (selectedCategory) params.set("category", selectedCategory)
@@ -125,44 +78,46 @@ const Catalog = () => {
     if (debouncedQuery) params.set("search", debouncedQuery)
     if (showOnlyInStock) params.set("inStock", "true")
 
-    params.set("page", String(currentPage))
-    params.set("limit", String(PRODUCTS_PER_PAGE))
+    if (withPaging) {
+      params.set("page", String(currentPage))
+      params.set("limit", String(PRODUCTS_PER_PAGE))
+    }
 
+    return params.toString()
+  }
+
+  /* ======================= LOAD PRODUCTS (PAGE) ======================= */
+  useEffect(() => {
     setIsLoading(true)
 
     apiFetch<{ items: Product[]; total: number }>(
-      `/v1/products?${params.toString()}`
+      `/v1/products?${buildParams(true)}`
     )
       .then((res) => {
         setProducts(res.items)
         setTotal(res.total)
       })
-      .catch(() => {
-        setProducts([])
-        setTotal(0)
-      })
       .finally(() => setIsLoading(false))
   }, [selectedCategory, selectedCollection, debouncedQuery, showOnlyInStock, currentPage])
 
+  /* ======================= LOAD PRODUCTS (FOR FILTERS) ======================= */
+  useEffect(() => {
+    apiFetch<{ items: Product[] }>(`/v1/products?${buildParams(false)}`)
+      .then((res) => setAllFilteredProducts(res.items))
+  }, [selectedCategory, selectedCollection, debouncedQuery, showOnlyInStock])
+
   const totalPages = Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE))
 
-  /* ======================= FILTER LOGIC ======================= */
-
+  /* ======================= FILTERS ======================= */
   const visibleCollections = collections.filter((col) =>
-    products.some((p) => p.collection === col.slug)
+    allFilteredProducts.some((p) => p.collection === col.slug)
   )
 
   const visibleCategories = categories.filter((cat) =>
-    products.some((p) => p.category === cat.slug)
+    allFilteredProducts.some((p) => p.category === cat.slug)
   )
 
-  const filteredCategories =
-    selectedCollection === "star-wars"
-      ? visibleCategories
-      : visibleCategories.filter((c) => c.slug !== "hasbro-375")
-
   /* ======================= HANDLERS ======================= */
-
   const handleCategoryChange = (slug: string | null) => {
     startTransition(() => {
       setSelectedCategory(slug)
@@ -188,7 +143,6 @@ const Catalog = () => {
   }
 
   /* ======================= UI ======================= */
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar onCartClick={() => setIsCartOpen(true)} />
@@ -199,7 +153,7 @@ const Catalog = () => {
 
         <Filters
           collections={visibleCollections}
-          categories={filteredCategories}
+          categories={visibleCategories}
           selectedCategory={selectedCategory}
           selectedCollection={selectedCollection}
           onCategoryChange={handleCategoryChange}
@@ -215,38 +169,26 @@ const Catalog = () => {
 
         <AnimatePresence mode="wait">
           {isLoading ? (
-            <motion.div
-              key="loading"
-              className="text-center py-20"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              Cargando…
-            </motion.div>
+            <motion.div className="text-center py-20">Cargando…</motion.div>
           ) : (
-            <motion.div
-              key="grid"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <ProductGrid
-                products={products}
-                onClearFilters={handleClearFilters}
-                onNavigate={handleNavigateToProduct}
-              />
-            </motion.div>
+            <ProductGrid
+              products={products}
+              onClearFilters={handleClearFilters}
+              onNavigate={handleNavigateToProduct}
+            />
           )}
         </AnimatePresence>
 
-        {!isLoading && totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            isLoading={isLoading}
-          />
+        {totalPages > 1 && (
+          <motion.div className="flex justify-center gap-2 mt-12">
+            <Button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+              <ChevronLeft />
+            </Button>
+            <span>{currentPage} / {totalPages}</span>
+            <Button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
+              <ChevronRight />
+            </Button>
+          </motion.div>
         )}
       </main>
 

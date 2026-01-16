@@ -8,7 +8,7 @@ import { Product } from "@/types/product";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, PackageX, X, ImageOff, ZoomIn, Sparkles, ShoppingBag, CheckCircle2 } from "lucide-react";
+import { Loader2, ArrowLeft, PackageX, X, ImageOff, ZoomIn, ShoppingBag, CheckCircle2 } from "lucide-react";
 
 interface ProductDetailProps {
   id?: string;
@@ -366,21 +366,18 @@ const useViewportHeight = () => {
 const ProductSkeleton = () => (
   <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
     <motion.div 
-      className="relative bg-gradient-to-br from-slate-200 via-slate-100 to-slate-200 rounded-3xl h-[350px] sm:h-[450px] lg:h-[550px] overflow-hidden"
-      animate={{ backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"] }}
-      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-      style={{ backgroundSize: "200% 200%" }}
-    >
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-    </motion.div>
-    <div className="space-y-6">
-      {[12, 8, 32, 16].map((h, i) => (
+      className="relative bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl h-[350px] sm:h-[450px] lg:h-[550px] overflow-hidden"
+      animate={{ opacity: [0.5, 0.7, 0.5] }}
+      transition={{ duration: 1.5, repeat: Infinity }}
+    />
+    <div className="space-y-5">
+      {[10, 6, 28, 14].map((h, i) => (
         <motion.div
           key={i}
-          className="bg-slate-200 rounded-2xl"
+          className="bg-slate-700 rounded-xl"
           style={{ height: `${h * 4}px` }}
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+          animate={{ opacity: [0.5, 0.7, 0.5] }}
+          transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.1 }}
         />
       ))}
     </div>
@@ -396,24 +393,24 @@ const ErrorState = ({
   message: string; 
   onRetry?: () => void;
 }) => (
-  <div className="text-center py-20 sm:py-32">
+  <div className="text-center py-20 sm:py-28">
     <motion.div 
-      className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl shadow-2xl p-8 sm:p-12 max-w-md mx-auto"
-      initial={{ opacity: 0, scale: 0.9 }}
+      className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-10 max-w-md mx-auto"
+      initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
     >
-      <PackageX className="w-20 h-20 sm:w-24 sm:h-24 mx-auto text-red-400 mb-6" />
-      <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight">
+      <PackageX className="w-20 h-20 mx-auto text-rose-400 mb-5" />
+      <h2 className="text-2xl font-bold text-white mb-3">
         {title}
       </h2>
-      <p className="text-slate-300 text-lg sm:text-xl leading-relaxed mb-6">
+      <p className="text-slate-300 text-base leading-relaxed mb-5">
         {message}
       </p>
       {onRetry && (
         <Button
           onClick={onRetry}
           size="lg"
-          className="min-h-[52px] px-8 text-lg font-semibold rounded-xl"
+          className="h-12 px-8 text-base font-semibold rounded-xl"
         >
           Reintentar
         </Button>
@@ -425,31 +422,18 @@ const ErrorState = ({
 const StockBadge = ({ inStock }: { inStock: boolean }) => {
   if (inStock) {
     return (
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-3 text-base sm:text-lg font-bold rounded-full shadow-lg shadow-emerald-500/30"
-      >
-        <motion.div
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <CheckCircle2 className="w-5 h-5" />
-        </motion.div>
-        Disponible en Stock
-      </motion.div>
+      <Badge className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-5 py-2.5 text-sm sm:text-base font-semibold rounded-lg border-0 shadow-lg">
+        <CheckCircle2 className="w-4 h-4" />
+        Disponible
+      </Badge>
     );
   }
 
   return (
-    <motion.div
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-rose-600 text-white px-6 py-3 text-base sm:text-lg font-bold rounded-full shadow-lg shadow-red-500/30"
-    >
-      <X className="w-5 h-5" />
-      Sin Stock
-    </motion.div>
+    <Badge className="inline-flex items-center gap-2 bg-gradient-to-r from-rose-500 to-red-600 text-white px-5 py-2.5 text-sm sm:text-base font-semibold rounded-lg border-0 shadow-lg">
+      <X className="w-4 h-4" />
+      Agotado
+    </Badge>
   );
 };
 
@@ -471,57 +455,44 @@ const ProductImage = ({
 
   if (imageState.isLoading && !imageError) {
     return (
-      <div className="w-full h-[350px] sm:h-[450px] lg:h-[550px] flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 rounded-3xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 animate-pulse" />
-        <Loader2 className="w-16 h-16 animate-spin text-blue-500 relative z-10" />
+      <div className="w-full h-[350px] sm:h-[450px] lg:h-[550px] flex items-center justify-center bg-slate-800/40 rounded-2xl border border-slate-700/50">
+        <Loader2 className="w-14 h-14 animate-spin text-violet-400" />
       </div>
     );
   }
 
   if (imageState.hasError || imageError) {
     return (
-      <div className="w-full h-[350px] sm:h-[450px] lg:h-[550px] flex flex-col items-center justify-center text-slate-400 bg-slate-100 rounded-3xl border-2 border-dashed border-slate-300">
-        <ImageOff className="w-20 h-20 mb-4" />
-        <p className="text-xl font-semibold">Sin imagen disponible</p>
+      <div className="w-full h-[350px] sm:h-[450px] lg:h-[550px] flex flex-col items-center justify-center text-slate-400 bg-slate-800/40 rounded-2xl border border-dashed border-slate-700">
+        <ImageOff className="w-16 h-16 mb-3" />
+        <p className="text-lg font-medium">Sin imagen disponible</p>
       </div>
     );
   }
 
   return (
-    <motion.button
+    <button
       onClick={onClick}
-      className="relative w-full group cursor-pointer focus:outline-none rounded-3xl overflow-hidden bg-white shadow-2xl border border-slate-200/50"
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="relative w-full group cursor-pointer focus:outline-none rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl"
       aria-label="Ver imagen en tamaño completo"
       type="button"
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
+      <img
+        src={src}
+        alt={alt}
+        onError={handleImageError}
+        className="w-full h-[350px] sm:h-[450px] lg:h-[550px] object-contain p-6"
+        loading="lazy"
+        decoding="async"
+      />
       
-      <div className="relative">
-        <img
-          src={src}
-          alt={alt}
-          onError={handleImageError}
-          className="w-full h-[350px] sm:h-[450px] lg:h-[550px] object-contain p-8"
-          loading="lazy"
-          decoding="async"
-        />
-        
-        <motion.div 
-          className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 flex items-end justify-center pb-8"
-          transition={{ duration: 0.3 }}
-        >
-          <div className="bg-white/95 backdrop-blur-md rounded-full px-6 py-3 flex items-center gap-2 shadow-xl">
-            <ZoomIn className="w-5 h-5 text-slate-700" />
-            <span className="text-sm font-bold text-slate-700">Ver en grande</span>
-          </div>
-        </motion.div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 flex items-end justify-center pb-6 transition-opacity duration-200">
+        <div className="bg-white/95 backdrop-blur-sm rounded-lg px-5 py-2.5 flex items-center gap-2">
+          <ZoomIn className="w-4 h-4 text-slate-700" />
+          <span className="text-sm font-semibold text-slate-700">Ver en grande</span>
+        </div>
       </div>
-
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/40 to-transparent blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-    </motion.button>
+    </button>
   );
 };
 
@@ -594,49 +565,42 @@ const ImageModal = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.2, ease: "easeInOut" }}
+        transition={{ duration: 0.2 }}
         role="dialog"
         aria-modal="true"
         aria-label="Vista ampliada de imagen"
       >
         <motion.div
           className="relative max-h-[85vh] max-w-[90vw] flex items-center justify-center"
-          initial={{ scale: 0.9, opacity: 0 }}
+          initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          transition={{ duration: 0.2 }}
         >
           <img
             src={imageSrc}
             alt={imageAlt}
-            className="max-h-[85vh] max-w-full object-contain rounded-lg shadow-2xl"
+            className="max-h-[85vh] max-w-full object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
             draggable={false}
           />
         </motion.div>
 
-        <motion.button
-          className="fixed top-4 right-4 sm:top-6 sm:right-6 min-h-[52px] min-w-[52px] sm:min-h-[56px] sm:min-w-[56px] rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white shadow-2xl border-2 border-white/30 flex items-center justify-center"
+        <button
+          className="fixed top-4 right-4 sm:top-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border border-white/30 flex items-center justify-center transition-colors"
           onClick={onClose}
-          whileHover={{ scale: 1.1, rotate: 90 }}
-          whileTap={{ scale: 0.9 }}
           aria-label="Cerrar vista ampliada"
           type="button"
         >
-          <X className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={2.5} />
-        </motion.button>
+          <X className="w-6 h-6" strokeWidth={2.5} />
+        </button>
 
-        <div className="fixed bottom-6 left-0 right-0 text-center px-4 sm:bottom-8 pointer-events-none">
-          <motion.p
-            className="text-white/90 text-sm sm:text-base font-medium bg-black/40 backdrop-blur-sm rounded-full px-6 py-3 inline-block"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
+        <div className="fixed bottom-6 left-0 right-0 text-center px-4 pointer-events-none">
+          <p className="text-white/90 text-sm font-medium bg-black/40 backdrop-blur-sm rounded-full px-5 py-2.5 inline-block">
             {isTouchDevice()
               ? "Toca fuera de la imagen para cerrar"
               : "Presiona ESC o haz clic fuera para cerrar"}
-          </motion.p>
+          </p>
         </div>
       </motion.div>
     </AnimatePresence>
@@ -668,59 +632,34 @@ const AddToCartButton = ({
   const isDisabled = !product.inStock || inCart || isAdding;
 
   return (
-    <motion.button
+    <button
       disabled={isDisabled}
       onClick={handleClick}
       className={`
-        relative w-full min-h-[64px] sm:min-h-[72px] text-xl font-bold rounded-2xl shadow-2xl
-        overflow-hidden group
+        relative w-full h-16 sm:h-[68px] text-lg font-semibold rounded-xl shadow-lg
+        overflow-hidden transition-all duration-200
         ${isDisabled 
-          ? 'bg-slate-300 cursor-not-allowed' 
-          : 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:shadow-purple-500/50'
+          ? 'bg-slate-700 cursor-not-allowed opacity-60' 
+          : 'bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500'
         }
-        disabled:opacity-60 transition-all duration-300
       `}
-      whileHover={!isDisabled ? { scale: 1.02, y: -2 } : {}}
-      whileTap={!isDisabled ? { scale: 0.98 } : {}}
       aria-label={inCart ? "Producto agregado" : "Agregar producto a consulta"}
     >
-      {!isDisabled && (
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600"
-          animate={{ x: ['-100%', '100%'] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-        />
-      )}
-
-      {!isDisabled && (
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
-      )}
-
-      <span className="relative z-10 flex items-center justify-center gap-3 text-white">
-        {isAdding && <Loader2 className="w-6 h-6 animate-spin" />}
+      <span className="relative z-10 flex items-center justify-center gap-2.5 text-white">
+        {isAdding && <Loader2 className="w-5 h-5 animate-spin" />}
         {inCart ? (
           <>
-            <CheckCircle2 className="w-6 h-6" />
-            Agregado a Consulta
+            <CheckCircle2 className="w-5 h-5" />
+            En Consulta
           </>
         ) : (
           <>
-            <ShoppingBag className="w-6 h-6" />
+            <ShoppingBag className="w-5 h-5" />
             Agregar a Consulta
           </>
         )}
       </span>
-
-      {!isDisabled && (
-        <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-          initial={{ opacity: 0, scale: 0 }}
-          whileHover={{ opacity: 1, scale: 1 }}
-        >
-          <Sparkles className="w-8 h-8 text-yellow-300" />
-        </motion.div>
-      )}
-    </motion.button>
+    </button>
   );
 };
 
@@ -786,55 +725,43 @@ const ProductDetail = ({
 
   return (
     <div 
-      className="bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 relative overflow-hidden"
+      className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 relative overflow-hidden"
       style={{
         ...getSafeAreaStyle(),
         minHeight: "100dvh",
       }}
     >
-      {/* Animated background effects */}
+      {/* Background effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"
+          className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/8 rounded-full blur-3xl"
           animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-            x: [0, 50, 0],
-            y: [0, 30, 0]
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
-          animate={{ 
-            scale: [1, 1.3, 1],
-            opacity: [0.3, 0.5, 0.3],
-            x: [0, -50, 0],
-            y: [0, -30, 0]
+            scale: [1, 1.15, 1],
+            x: [0, 40, 0],
+            y: [0, 25, 0]
           }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl"
+          className="absolute bottom-0 right-1/4 w-96 h-96 bg-fuchsia-500/8 rounded-full blur-3xl"
           animate={{ 
-            scale: [1, 1.1, 1],
-            opacity: [0.2, 0.4, 0.2]
+            scale: [1, 1.2, 1],
+            x: [0, -40, 0],
+            y: [0, -25, 0]
           }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
 
       <main className="relative max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-        <motion.button
+        <button
           onClick={handleBack}
-          className="mb-6 sm:mb-8 flex items-center gap-3 px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white font-semibold hover:bg-white/20 transition-all shadow-lg"
-          whileHover={{ scale: 1.05, x: -5 }}
-          whileTap={{ scale: 0.95 }}
+          className="mb-6 sm:mb-8 flex items-center gap-2.5 px-5 py-2.5 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 hover:bg-slate-800/60 hover:border-slate-600/60 rounded-lg text-white font-semibold transition-all"
           aria-label="Volver atrás"
         >
-          <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
+          <ArrowLeft className="w-5 h-5" strokeWidth={2.5} />
           Volver
-        </motion.button>
+        </button>
 
         {isLoading && <ProductSkeleton />}
 
@@ -856,9 +783,9 @@ const ProductDetail = ({
         {!isLoading && !error && product && (
           <motion.div
             className="grid lg:grid-cols-2 gap-8 lg:gap-12"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            transition={{ duration: 0.3 }}
           >
             <div className="relative">
               {product.image ? (
@@ -868,80 +795,53 @@ const ProductDetail = ({
                   onClick={handleOpenModal}
                 />
               ) : (
-                <div className="w-full h-[350px] sm:h-[450px] lg:h-[550px] flex flex-col items-center justify-center text-slate-400 bg-slate-800/50 rounded-3xl border-2 border-dashed border-slate-600">
-                  <ImageOff className="w-20 h-20 mb-4" />
-                  <p className="text-xl font-semibold">Sin imagen disponible</p>
+                <div className="w-full h-[350px] sm:h-[450px] lg:h-[550px] flex flex-col items-center justify-center text-slate-400 bg-slate-800/40 rounded-2xl border border-dashed border-slate-700">
+                  <ImageOff className="w-16 h-16 mb-3" />
+                  <p className="text-lg font-medium">Sin imagen disponible</p>
                 </div>
               )}
             </div>
 
-            <div className="space-y-6 sm:space-y-8">
-              <motion.div 
-                className="space-y-4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 leading-tight tracking-tight">
+            <div className="space-y-6">
+              <div className="space-y-3.5">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
                   {product.name}
                 </h1>
 
                 <StockBadge inStock={product.inStock} />
-              </motion.div>
+              </div>
 
               {product.description && (
-                <motion.div
-                  className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 sm:p-6 shadow-xl"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <h2 className="text-lg sm:text-xl font-bold text-white mb-3 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-yellow-400" />
+                <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-5">
+                  <h2 className="text-base font-semibold text-white mb-2.5">
                     Descripción
                   </h2>
-                  <p className="text-slate-300 text-base sm:text-lg leading-relaxed whitespace-pre-line">
+                  <p className="text-slate-300 text-sm sm:text-base leading-relaxed whitespace-pre-line">
                     {product.description}
                   </p>
-                </motion.div>
+                </div>
               )}
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <AddToCartButton
-                  product={product}
-                  inCart={inCart}
-                  onAdd={handleAddToCart}
-                />
-              </motion.div>
+              <AddToCartButton
+                product={product}
+                inCart={inCart}
+                onAdd={handleAddToCart}
+              />
 
               {product.image && (
-                <motion.p
-                  className="text-slate-400 text-center text-sm sm:text-base bg-white/5 backdrop-blur-sm rounded-full py-3 px-4 border border-white/10"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  💡 Toca la imagen para verla en tamaño completo
-                </motion.p>
+                <p className="text-slate-400 text-center text-sm bg-slate-800/30 backdrop-blur-sm rounded-lg py-2.5 px-4 border border-slate-700/50">
+                  Toca la imagen para verla en tamaño completo
+                </p>
               )}
 
               {!product.inStock && (
-                <motion.div 
-                  className="bg-amber-500/10 border border-amber-500/30 backdrop-blur-sm p-4 rounded-xl"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                >
-                  <p className="text-amber-200 text-sm sm:text-base font-medium">
+                <div className="bg-amber-500/10 border border-amber-500/30 backdrop-blur-sm p-4 rounded-xl">
+                  <p className="text-amber-200 text-sm font-medium">
                     ⚠️ Este producto no está disponible actualmente. Puedes agregarlo
                     a tu consulta para recibir notificaciones cuando vuelva a estar
                     en stock.
                   </p>
-                </motion.div>
+                </div>
               )}
             </div>
           </motion.div>

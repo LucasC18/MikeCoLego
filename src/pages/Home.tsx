@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import CartDrawer from "@/components/CartDrawer";
-import { Sparkles, ChevronDown, ArrowRight, Star, Loader2, Zap, Package } from "lucide-react";
+import { Sparkles, ChevronDown, ArrowRight, Star, Loader2, Package } from "lucide-react";
 import heroImage from "@/assets/hero-starwars.jpg";
 import { apiFetch } from "@/config/api";
 import { Product } from "@/types/product";
@@ -39,7 +39,7 @@ const MAX_VISIBLE_COLLECTIONS = 2;
 const SCROLL_BEHAVIOR: ScrollBehavior = "smooth";
 
 /* ================================
-   DEVICE DETECTION (Performance)
+   DEVICE DETECTION
 ================================= */
 interface NavigatorWithMemory extends Navigator {
   deviceMemory?: number;
@@ -54,7 +54,6 @@ const useDeviceDetection = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       
-      // Detectar dispositivos de bajo rendimiento con tipos seguros
       const nav = navigator as NavigatorWithMemory;
       const cores = navigator.hardwareConcurrency || 4;
       const memory = nav.deviceMemory || 4;
@@ -271,63 +270,49 @@ const useImagePreload = (src: string) => {
 };
 
 /* ================================
-   OPTIMIZED BACKGROUND (GPU Accelerated)
+   OPTIMIZED BACKGROUND
 ================================= */
 const OptimizedBackground = ({ isMobile, isLowEnd, prefersReducedMotion }: { 
   isMobile: boolean; 
   isLowEnd: boolean;
   prefersReducedMotion: boolean;
 }) => {
-  // No animaciones si el usuario lo prefiere o es low-end
   if (prefersReducedMotion || isLowEnd) {
     return (
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-2xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/8 rounded-full blur-3xl" />
       </div>
     );
   }
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      {/* Burbuja principal - siempre visible */}
       <motion.div
-        className={`absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full ${isMobile ? 'blur-xl' : 'blur-3xl'}`}
+        className={`absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/8 rounded-full ${isMobile ? 'blur-2xl' : 'blur-3xl'}`}
         style={{ willChange: "transform" }}
         animate={{ 
-          scale: [1, 1.15, 1],
-          x: [0, isMobile ? 20 : 50, 0],
-          y: [0, isMobile ? 15 : 30, 0]
+          scale: [1, 1.1, 1],
+          x: [0, isMobile ? 15 : 40, 0],
+          y: [0, isMobile ? 10 : 25, 0]
         }}
         transition={{ 
-          duration: isMobile ? 10 : 8,
+          duration: isMobile ? 12 : 10,
           repeat: Infinity, 
           ease: "easeInOut" 
         }}
       />
       
-      {/* Burbujas adicionales - solo desktop */}
       {!isMobile && (
-        <>
-          <motion.div
-            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
-            style={{ willChange: "transform" }}
-            animate={{ 
-              scale: [1, 1.2, 1],
-              x: [0, -40, 0],
-              y: [0, -25, 0]
-            }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl"
-            style={{ willChange: "transform" }}
-            animate={{ 
-              scale: [1, 1.1, 1],
-              opacity: [0.2, 0.4, 0.2]
-            }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </>
+        <motion.div
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-500/8 rounded-full blur-3xl"
+          style={{ willChange: "transform" }}
+          animate={{ 
+            scale: [1, 1.15, 1],
+            x: [0, -35, 0],
+            y: [0, -20, 0]
+          }}
+          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
+        />
       )}
     </div>
   );
@@ -345,76 +330,52 @@ const HeroBackground = ({ imageSrc, isMobile, prefersReducedMotion }: {
 
   return (
     <motion.div
-      initial={prefersReducedMotion ? undefined : { scale: 1.1 }}
+      initial={prefersReducedMotion ? undefined : { scale: 1.05 }}
       animate={prefersReducedMotion ? undefined : { scale: 1 }}
-      transition={prefersReducedMotion ? undefined : { duration: 1.5, ease: "easeOut" }}
+      transition={prefersReducedMotion ? undefined : { duration: 1.2, ease: "easeOut" }}
       className="absolute inset-0"
     >
       {!isImageLoaded && (
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 animate-pulse" />
       )}
 
       <img
         src={imageSrc}
         alt="Hero background"
-        className={`w-full h-full object-cover transition-opacity duration-700 ${
+        className={`w-full h-full object-cover transition-opacity duration-500 ${
           isImageLoaded ? "opacity-100" : "opacity-0"
         }`}
         loading="eager"
         decoding="async"
       />
 
-      <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-purple-900/40 to-black/60" />
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/70 to-transparent" />
-      
-      {/* Overlay sutil - solo desktop */}
-      {!isMobile && !prefersReducedMotion && (
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10"
-          animate={{ opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        />
-      )}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-slate-900/30 to-black/50" />
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
     </motion.div>
   );
 };
 
-const HeroBadge = ({ prefersReducedMotion }: { prefersReducedMotion: boolean }) => (
-  <motion.div 
-    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-md border border-amber-500/40 rounded-full mb-8 shadow-2xl shadow-amber-500/20"
-    animate={prefersReducedMotion ? undefined : {
-      boxShadow: [
-        "0 0 20px rgba(251, 191, 36, 0.2)",
-        "0 0 30px rgba(251, 191, 36, 0.4)",
-        "0 0 20px rgba(251, 191, 36, 0.2)",
-      ],
-    }}
-    transition={prefersReducedMotion ? undefined : {
-      duration: 2,
-      repeat: Infinity,
-      ease: "easeInOut",
-    }}
-  >
-    <Sparkles className="w-5 h-5 text-amber-400" />
-    <span className="text-base font-bold text-amber-200">
-      🎯 Colecciones Exclusivas
+const HeroBadge = () => (
+  <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 backdrop-blur-sm border border-amber-500/30 rounded-full mb-7">
+    <Sparkles className="w-4 h-4 text-amber-400" />
+    <span className="text-sm font-semibold text-amber-200">
+      Colecciones Exclusivas
     </span>
-  </motion.div>
+  </div>
 );
 
 const HeroTitle = () => (
-  <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-8 leading-tight">
+  <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight">
     <span className="text-white drop-shadow-2xl">Jedi</span>
-    <span className="block sm:inline text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 drop-shadow-2xl">
+    <span className="block sm:inline text-white drop-shadow-2xl">
       {" "}Collector71
     </span>
   </h1>
 );
 
 const HeroDescription = () => (
-  <p className="text-slate-200 text-xl md:text-2xl max-w-3xl mx-auto mb-12 leading-relaxed px-4 drop-shadow-lg">
-    Explorá nuestros personajes organizados por colección. Elegí una y
-    encontrá tu próximo favorito. 🧱✨
+  <p className="text-slate-200 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed px-4 drop-shadow-lg">
+    Explorá nuestras colecciones y encontrá tu próximo favorito
   </p>
 );
 
@@ -434,11 +395,11 @@ const CollectionButtons = ({
 
   if (isLoading) {
     return (
-      <div className="flex flex-wrap justify-center gap-4 mb-12 w-full max-w-2xl">
+      <div className="flex flex-wrap justify-center gap-3 mb-10 w-full max-w-2xl">
         {[1, 2].map((i) => (
           <motion.div
             key={i}
-            className="px-12 py-5 min-h-[64px] min-w-[200px] rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10"
+            className="px-10 py-4 h-14 min-w-[180px] rounded-xl bg-slate-800/30 border border-slate-700/50"
             animate={{ opacity: [0.5, 0.8, 0.5] }}
             transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
           />
@@ -453,38 +414,32 @@ const CollectionButtons = ({
 
   return (
     <motion.div
-      className="flex flex-wrap justify-center gap-4 mb-12 w-full max-w-2xl"
-      initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+      className="flex flex-wrap justify-center gap-3 mb-10 w-full max-w-2xl"
+      initial={prefersReducedMotion ? undefined : { opacity: 0, y: 15 }}
       animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-      transition={prefersReducedMotion ? undefined : { duration: 0.6, delay: 0.5, ease: "easeOut" }}
+      transition={prefersReducedMotion ? undefined : { duration: 0.4, delay: 0.3 }}
     >
       {visibleCollections.map((collection, index) => (
         <motion.div
           key={collection.id}
-          initial={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.9 }}
+          initial={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.95 }}
           animate={prefersReducedMotion ? undefined : { opacity: 1, scale: 1 }}
           transition={
             prefersReducedMotion
               ? undefined
               : {
-                  duration: 0.4,
-                  delay: 0.6 + index * 0.1,
-                  ease: "easeOut",
+                  duration: 0.3,
+                  delay: 0.4 + index * 0.1,
                 }
           }
         >
           <Link
             to={`/catalogo?collection=${collection.slug}`}
-            className="group relative inline-block"
+            className="inline-block px-10 py-4 h-14 min-w-[180px] rounded-xl bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 hover:bg-slate-800/60 hover:border-slate-600/60 font-semibold text-base text-white transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
             aria-label={`Ver colección ${collection.name}`}
           >
-            {/* Glow effect - solo hover */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
-            
-            <div className="relative px-12 py-5 min-h-[64px] min-w-[200px] rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 font-bold text-lg text-white transition-all duration-300 hover:bg-white/20 shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95">
-              <Package className="w-5 h-5 mr-2" />
-              {collection.name}
-            </div>
+            <Package className="w-4 h-4" />
+            {collection.name}
           </Link>
         </motion.div>
       ))}
@@ -492,37 +447,18 @@ const CollectionButtons = ({
   );
 };
 
-const FeaturedButton = ({ onClick, prefersReducedMotion }: { 
+const FeaturedButton = ({ onClick }: { 
   onClick: () => void;
   prefersReducedMotion: boolean;
 }) => {
   return (
-    <motion.button
+    <button
       onClick={onClick}
-      whileHover={prefersReducedMotion ? undefined : { scale: 1.05, y: -2 }}
-      whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
-      className="group relative px-12 py-5 min-h-[64px] min-w-[220px] font-bold text-xl rounded-2xl overflow-hidden shadow-2xl"
+      className="px-10 py-4 h-14 min-w-[200px] font-semibold text-lg rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white border-0 shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
       aria-label="Ver productos destacados"
     >
-      {/* Animated gradient - solo si no prefiere movimiento reducido */}
-      {!prefersReducedMotion ? (
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600"
-          animate={{ x: ['-100%', '100%'] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-        />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600" />
-      )}
-      
-      {/* Glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
-      
-      <span className="relative z-10 flex items-center justify-center gap-2 text-white">
-        <Zap className="w-5 h-5" />
-        Ver Destacados
-      </span>
-    </motion.button>
+      Ver Destacados
+    </button>
   );
 };
 
@@ -532,7 +468,7 @@ const ScrollIndicator = ({ prefersReducedMotion }: { prefersReducedMotion: boole
     animate={
       prefersReducedMotion
         ? undefined
-        : { y: [0, 12, 0] }
+        : { y: [0, 10, 0] }
     }
     transition={
       prefersReducedMotion
@@ -545,86 +481,72 @@ const ScrollIndicator = ({ prefersReducedMotion }: { prefersReducedMotion: boole
     }
   >
     <div className="flex flex-col items-center gap-2">
-      <ChevronDown className="w-8 h-8 text-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
+      <ChevronDown className="w-7 h-7 text-violet-400" />
       <span className="text-sm text-slate-300 font-medium">Scrolleá para ver más</span>
     </div>
   </motion.div>
 );
 
 const LoadingSpinner = ({ message }: { message?: string }) => (
-  <div className="text-center py-32">
+  <div className="text-center py-28">
     <motion.div
       animate={{ rotate: 360 }}
       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      className="inline-block mb-6"
+      className="inline-block mb-4"
     >
-      <Loader2 className="w-16 h-16 text-purple-400" />
+      <Loader2 className="w-14 h-14 text-violet-400" />
     </motion.div>
-    <p className="text-slate-300 text-xl font-medium">{message || "Cargando..."}</p>
+    <p className="text-slate-300 text-lg font-medium">{message || "Cargando..."}</p>
   </div>
 );
 
 const EmptyState = ({ message }: { message: string }) => (
   <motion.div 
-    className="text-center py-32"
-    initial={{ opacity: 0, scale: 0.9 }}
+    className="text-center py-28"
+    initial={{ opacity: 0, scale: 0.95 }}
     animate={{ opacity: 1, scale: 1 }}
   >
-    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-12 max-w-md mx-auto">
-      <Package className="w-20 h-20 text-slate-500 mx-auto mb-4" />
-      <p className="text-slate-400 text-xl font-medium">{message}</p>
+    <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-10 max-w-md mx-auto">
+      <Package className="w-16 h-16 text-slate-500 mx-auto mb-3" />
+      <p className="text-slate-400 text-lg font-medium">{message}</p>
     </div>
   </motion.div>
 );
 
-const SectionTitle = ({ title, prefersReducedMotion }: { 
+const SectionTitle = ({ title }: { 
   title: string;
   prefersReducedMotion: boolean;
 }) => (
   <motion.div 
-    className="flex items-center justify-center gap-4 mb-16"
-    initial={{ opacity: 0, y: 20 }}
+    className="flex items-center justify-center gap-3 mb-14"
+    initial={{ opacity: 0, y: 15 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
-    transition={{ duration: 0.6 }}
+    transition={{ duration: 0.4 }}
   >
-    <motion.div
-      animate={prefersReducedMotion ? undefined : { rotate: [0, 360] }}
-      transition={prefersReducedMotion ? undefined : { duration: 3, repeat: Infinity, ease: "linear" }}
-    >
-      <Star className="w-8 h-8 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
-    </motion.div>
-    <h2 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+    <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
+    <h2 className="text-3xl md:text-4xl font-bold text-white">
       {title}
     </h2>
-    <motion.div
-      animate={prefersReducedMotion ? undefined : { rotate: [360, 0] }}
-      transition={prefersReducedMotion ? undefined : { duration: 3, repeat: Infinity, ease: "linear" }}
-    >
-      <Star className="w-8 h-8 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
-    </motion.div>
+    <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
   </motion.div>
 );
 
 const CatalogButton = () => (
   <motion.div 
-    className="text-center mt-20"
-    initial={{ opacity: 0, y: 20 }}
+    className="text-center mt-16"
+    initial={{ opacity: 0, y: 15 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
-    transition={{ duration: 0.6 }}
+    transition={{ duration: 0.4 }}
   >
     <Link
       to="/catalogo"
-      className="group relative inline-block"
+      className="inline-flex items-center gap-2 px-10 py-4 h-14 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 hover:bg-slate-800/60 hover:border-slate-600/60 rounded-xl font-semibold text-base text-white transition-all duration-200 shadow-lg"
       aria-label="Ver catálogo completo de productos"
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
-      
-      <div className="relative inline-flex items-center gap-3 px-12 py-5 min-h-[64px] bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl font-bold text-lg text-white hover:bg-white/20 transition-all duration-300 shadow-2xl">
-        Ver Catálogo Completo
-        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-      </div>
+      Ver Catálogo Completo
+      <ArrowRight className="w-4 h-4" />
     </Link>
   </motion.div>
 );
@@ -641,7 +563,7 @@ const FeaturedSection = ({
   }
 
   if (products.length === 0) {
-    return <EmptyState message="No hay productos destacados todavía 🔍" />;
+    return <EmptyState message="No hay productos destacados todavía" />;
   }
 
   return (
@@ -650,7 +572,7 @@ const FeaturedSection = ({
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.4 }}
     >
       <div className="w-full max-w-6xl">
         <ProductGrid products={products} />
@@ -685,17 +607,14 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    preloadImage(heroImage).catch(() => {
-      // Silencioso
-    });
+    preloadImage(heroImage).catch(() => {});
   }, []);
 
   return (
     <div
-      className="min-h-[100dvh] bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 relative overflow-hidden"
+      className="min-h-[100dvh] bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 relative overflow-hidden"
       style={getSafeAreaStyle()}
     >
-      {/* Optimized Background - Adaptativo según dispositivo */}
       <OptimizedBackground 
         isMobile={isMobile} 
         isLowEnd={isLowEnd}
@@ -704,7 +623,6 @@ const Home = () => {
 
       <Navbar onCartClick={handleCartOpen} />
 
-      {/* ================= HERO SECTION ================= */}
       <section
         className="relative flex items-center justify-center overflow-hidden"
         style={{ minHeight: getViewportHeight() }}
@@ -717,16 +635,16 @@ const Home = () => {
 
         <div className="relative z-10 w-full max-w-5xl mx-auto px-6 py-16 flex flex-col items-center justify-center text-center">
           <motion.div
-            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 50 }}
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
             animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             transition={
               prefersReducedMotion
                 ? undefined
-                : { duration: 0.8, delay: 0.3, ease: "easeOut" }
+                : { duration: 0.6, delay: 0.2 }
             }
             className="w-full flex flex-col items-center"
           >
-            <HeroBadge prefersReducedMotion={prefersReducedMotion} />
+            <HeroBadge />
             <HeroTitle />
             <HeroDescription />
 
@@ -746,8 +664,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ================= FEATURED PRODUCTS SECTION ================= */}
-      <main id="featured" className="relative w-full px-6 py-24">
+      <main id="featured" className="relative w-full px-6 py-20">
         <div className="max-w-7xl mx-auto">
           <SectionTitle 
             title="Productos Destacados"
@@ -763,7 +680,6 @@ const Home = () => {
         </div>
       </main>
 
-      {/* ================= CART DRAWER ================= */}
       <CartDrawer isOpen={isCartOpen} onClose={handleCartClose} />
     </div>
   );

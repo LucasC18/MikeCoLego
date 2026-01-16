@@ -5,12 +5,11 @@ import {
   useTransform,
   useReducedMotion,
 } from "framer-motion";
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { apiFetch } from "@/config/api";
 import {
-  ChevronDown,
   Sparkles,
   Package,
   Users,
@@ -75,7 +74,6 @@ interface NavigatorWithMemory extends Navigator {
 ================================= */
 const PRODUCTS_LIMIT = 1000;
 const COUNTER_DURATION = 2;
-const NAVBAR_HEIGHT = 64;
 
 const FEATURES: FeatureItem[] = [
   {
@@ -87,7 +85,7 @@ const FEATURES: FeatureItem[] = [
   {
     icon: Truck,
     title: "Envío Seguro",
-    desc: "Empaque premium para máxima protección",
+    desc: "Empaque cuidadoso para máxima protección",
     emoji: "🚚",
   },
   {
@@ -98,8 +96,8 @@ const FEATURES: FeatureItem[] = [
   },
   {
     icon: Star,
-    title: "Calidad Premium",
-    desc: "Solo los mejores productos seleccionados",
+    title: "Selección Curada",
+    desc: "Los mejores productos para coleccionistas",
     emoji: "⭐",
   },
   {
@@ -277,7 +275,7 @@ const OptimizedBackground = ({
   if (prefersReducedMotion || isLowEnd) {
     return (
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-2xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/8 rounded-full blur-3xl" />
       </div>
     );
   }
@@ -285,42 +283,31 @@ const OptimizedBackground = ({
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
       <motion.div
-        className={`absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full ${isMobile ? 'blur-xl' : 'blur-3xl'}`}
+        className={`absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/8 rounded-full ${isMobile ? 'blur-2xl' : 'blur-3xl'}`}
         style={{ willChange: "transform" }}
         animate={{ 
-          scale: [1, 1.15, 1],
-          x: [0, isMobile ? 20 : 50, 0],
-          y: [0, isMobile ? 15 : 30, 0]
+          scale: [1, 1.1, 1],
+          x: [0, isMobile ? 15 : 40, 0],
+          y: [0, isMobile ? 10 : 25, 0]
         }}
         transition={{ 
-          duration: isMobile ? 10 : 8,
+          duration: isMobile ? 12 : 10,
           repeat: Infinity, 
           ease: "easeInOut" 
         }}
       />
       
       {!isMobile && (
-        <>
-          <motion.div
-            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
-            style={{ willChange: "transform" }}
-            animate={{ 
-              scale: [1, 1.2, 1],
-              x: [0, -40, 0],
-              y: [0, -25, 0]
-            }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl"
-            style={{ willChange: "transform" }}
-            animate={{ 
-              scale: [1, 1.1, 1],
-              opacity: [0.2, 0.4, 0.2]
-            }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </>
+        <motion.div
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-500/8 rounded-full blur-3xl"
+          style={{ willChange: "transform" }}
+          animate={{ 
+            scale: [1, 1.15, 1],
+            x: [0, -35, 0],
+            y: [0, -20, 0]
+          }}
+          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
+        />
       )}
     </div>
   );
@@ -336,28 +323,24 @@ const StatCard = React.memo<StatCardProps>(
     return (
       <motion.div
         ref={ref}
-        initial={reduceMotion ? undefined : { opacity: 0, y: 30 }}
+        initial={reduceMotion ? undefined : { opacity: 0, y: 20 }}
         whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={reduceMotion ? undefined : { duration: 0.6 }}
-        whileHover={reduceMotion ? undefined : { scale: 1.05, y: -5 }}
-        className="relative group"
+        transition={reduceMotion ? undefined : { duration: 0.4 }}
+        className="relative"
       >
-        {/* Glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
-        <div className="relative bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-10 text-center transition-all duration-300 shadow-2xl">
-          <div className="flex justify-center gap-3 mb-6">
-            <span className="text-4xl" role="img" aria-label={label}>
+        <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-8 text-center transition-all duration-200 hover:bg-slate-800/40 hover:border-slate-600/60">
+          <div className="flex justify-center gap-2.5 mb-4">
+            <span className="text-3xl" role="img" aria-label={label}>
               {emoji}
             </span>
-            <Icon className="w-8 h-8 text-purple-400" />
+            <Icon className="w-7 h-7 text-violet-400" />
           </div>
-          <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mb-3">
+          <div className="text-5xl font-bold text-white mb-2">
             {count}
             {suffix}
           </div>
-          <p className="text-slate-300 text-lg font-semibold">{label}</p>
+          <p className="text-slate-400 text-base font-medium">{label}</p>
         </div>
       </motion.div>
     );
@@ -370,50 +353,35 @@ const HeroSection = ({ reduceMotion }: { reduceMotion: boolean }) => {
   const heroRef = useRef<HTMLDivElement | null>(null);
 
   const { scrollYProgress } = useScroll({ target: heroRef });
-  const y = useTransform(scrollYProgress, [0, 1], [0, 220]);
+  const y = useTransform(scrollYProgress, [0, 1], [0, 150]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   return (
     <motion.section
       ref={heroRef}
       style={!reduceMotion ? { y, opacity } : undefined}
-      className="text-center mb-40"
+      className="text-center mb-32"
     >
       <motion.div
-        initial={reduceMotion ? undefined : { opacity: 0, y: 30 }}
+        initial={reduceMotion ? undefined : { opacity: 0, y: 20 }}
         animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-        transition={reduceMotion ? undefined : { duration: 0.8 }}
+        transition={reduceMotion ? undefined : { duration: 0.5 }}
       >
-        <motion.div 
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-md border border-amber-500/40 rounded-full mb-8 shadow-2xl shadow-amber-500/20"
-          animate={reduceMotion ? undefined : {
-            boxShadow: [
-              "0 0 20px rgba(251, 191, 36, 0.2)",
-              "0 0 30px rgba(251, 191, 36, 0.4)",
-              "0 0 20px rgba(251, 191, 36, 0.2)",
-            ],
-          }}
-          transition={reduceMotion ? undefined : {
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        >
-          <Sparkles className="w-5 h-5 text-amber-400" />
-          <span className="text-base font-bold text-amber-200">
-            ℹ️ Sobre Nosotros
+        <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 backdrop-blur-sm border border-amber-500/30 rounded-full mb-7">
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <span className="text-sm font-semibold text-amber-200">
+            Sobre Nosotros
           </span>
-        </motion.div>
+        </div>
 
-        <h1 className="text-6xl sm:text-7xl md:text-8xl font-black mb-8 leading-tight">
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 drop-shadow-2xl">
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 leading-tight">
+          <span className="text-white">
             JediCollector71
           </span>
         </h1>
 
-        <p className="text-slate-200 text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed drop-shadow-lg">
-          Coleccionismo premium, organizado y real. Tu destino para las mejores
-          figuras y productos exclusivos. 🧱✨
+        <p className="text-slate-300 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
+          Tu destino para figuras y productos exclusivos de colección
         </p>
       </motion.div>
     </motion.section>
@@ -431,21 +399,21 @@ const StatsSection = ({
 }) => {
   if (isLoading) {
     return (
-      <section className="flex flex-col items-center justify-center mb-32 py-20">
+      <section className="flex flex-col items-center justify-center mb-28 py-16">
         <motion.div
           animate={reduceMotion ? undefined : { rotate: 360 }}
           transition={reduceMotion ? undefined : { duration: 1, repeat: Infinity, ease: "linear" }}
-          className="mb-6"
+          className="mb-4"
         >
-          <Loader2 className="w-16 h-16 text-purple-400" />
+          <Loader2 className="w-12 h-12 text-violet-400" />
         </motion.div>
-        <p className="text-slate-300 text-xl font-medium">Cargando estadísticas...</p>
+        <p className="text-slate-300 text-lg font-medium">Cargando estadísticas...</p>
       </section>
     );
   }
 
   return (
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32">
+    <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-28">
       <StatCard
         value={totalProducts}
         label="Productos"
@@ -484,55 +452,46 @@ const FeatureCard = ({
   reduceMotion: boolean;
 }) => (
   <motion.div
-    initial={reduceMotion ? undefined : { opacity: 0, y: 30 }}
+    initial={reduceMotion ? undefined : { opacity: 0, y: 20 }}
     whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={
       reduceMotion
         ? undefined
-        : { duration: 0.6, delay: index * 0.1 }
+        : { duration: 0.4, delay: index * 0.08 }
     }
-    whileHover={reduceMotion ? undefined : { scale: 1.05, y: -5 }}
-    className="relative group"
+    className="relative"
   >
-    {/* Glow effect on hover */}
-    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-    
-    <div className="relative bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-8 text-center transition-all duration-300 shadow-xl">
-      <div className="flex justify-center mb-5">
-        <div className="p-4 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30 shadow-lg">
-          <feature.icon className="w-8 h-8 text-blue-400" />
+    <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 text-center transition-all duration-200 hover:bg-slate-800/40 hover:border-slate-600/60">
+      <div className="flex justify-center mb-4">
+        <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500/15 to-fuchsia-500/15 border border-violet-500/25">
+          <feature.icon className="w-6 h-6 text-violet-400" />
         </div>
       </div>
-      <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-      <p className="text-slate-300 leading-relaxed">{feature.desc}</p>
+      <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+      <p className="text-slate-400 text-sm leading-relaxed">{feature.desc}</p>
     </div>
   </motion.div>
 );
 
 const FeaturesSection = ({ reduceMotion }: { reduceMotion: boolean }) => (
   <motion.section
-    initial={reduceMotion ? undefined : { opacity: 0, y: 40 }}
+    initial={reduceMotion ? undefined : { opacity: 0, y: 25 }}
     whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
     viewport={{ once: true }}
-    transition={reduceMotion ? undefined : { duration: 0.8 }}
-    className="mb-32"
+    transition={reduceMotion ? undefined : { duration: 0.5 }}
+    className="mb-28"
   >
-    <motion.div 
-      className="text-center mb-16"
-      initial={reduceMotion ? undefined : { opacity: 0, y: 20 }}
-      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-    >
-      <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mb-4">
+    <div className="text-center mb-12">
+      <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
         ¿Por qué elegirnos?
       </h2>
-      <p className="text-slate-300 text-lg max-w-2xl mx-auto">
+      <p className="text-slate-400 text-base max-w-2xl mx-auto">
         Nos comprometemos a brindarte la mejor experiencia en coleccionismo
       </p>
-    </motion.div>
+    </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {FEATURES.map((feature, idx) => (
         <FeatureCard
           key={feature.title}
@@ -547,44 +506,19 @@ const FeaturesSection = ({ reduceMotion }: { reduceMotion: boolean }) => (
 
 const CTASection = ({
   onNavigate,
-  reduceMotion,
 }: {
   onNavigate: () => void;
   reduceMotion: boolean;
 }) => (
-  <motion.div 
-    className="text-center"
-    initial={reduceMotion ? undefined : { opacity: 0, y: 20 }}
-    whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={reduceMotion ? undefined : { duration: 0.6 }}
-  >
-    <motion.button
+  <div className="text-center">
+    <button
       onClick={onNavigate}
-      whileHover={reduceMotion ? undefined : { scale: 1.05, y: -2 }}
-      whileTap={reduceMotion ? undefined : { scale: 0.95 }}
-      className="group relative px-14 py-6 min-h-[64px] font-bold text-xl rounded-2xl overflow-hidden shadow-2xl"
+      className="px-10 py-4 h-14 font-semibold text-lg rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white border-0 shadow-lg transition-all duration-200 touch-manipulation"
       aria-label="Ver catálogo completo"
     >
-      {/* Animated gradient */}
-      {!reduceMotion ? (
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600"
-          animate={{ x: ['-100%', '100%'] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-        />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600" />
-      )}
-      
-      {/* Glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
-      
-      <span className="relative z-10 flex items-center justify-center gap-2 text-white">
-        🚀 Ver catálogo completo
-      </span>
-    </motion.button>
-  </motion.div>
+      Ver catálogo completo
+    </button>
+  </div>
 );
 
 /* ================================
@@ -609,10 +543,9 @@ const About = () => {
 
   return (
     <div
-      className="min-h-[100dvh] bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 relative overflow-hidden"
+      className="min-h-[100dvh] bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 relative overflow-hidden"
       style={getSafeAreaStyle()}
     >
-      {/* Optimized Background */}
       <OptimizedBackground 
         isMobile={isMobile} 
         isLowEnd={isLowEnd}
@@ -621,7 +554,7 @@ const About = () => {
 
       <Navbar onCartClick={handleCartClick} />
 
-      <main className="relative max-w-7xl mx-auto px-6 pt-32 pb-24">
+      <main className="relative max-w-7xl mx-auto px-6 pt-28 pb-20">
         <HeroSection reduceMotion={!!reduceMotion} />
 
         <StatsSection

@@ -11,9 +11,8 @@ import CartDrawer from "@/components/CartDrawer"
 import { apiFetch } from "@/config/api"
 import { Product } from "@/types/product"
 
-import { ChevronLeft, ChevronRight, Loader2, Package, Sparkles } from "lucide-react"
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 
 /* ================================
    TYPES
@@ -66,7 +65,6 @@ const Catalog = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const [, startTransition] = useTransition()
-  const prefersReducedMotion = useReducedMotion() || false
 
   // Filters
   const [search, setSearch] = useState("")
@@ -120,6 +118,18 @@ const Catalog = () => {
   }, [location.search])
 
   /* ======================
+     Invalidate invalid category when collection changes
+  ====================== */
+  useEffect(() => {
+    if (!collection || !category) return
+
+    // Si la categoría actual no pertenece a la colección → la limpiamos
+    if (!categories.some(c => c.slug === category)) {
+      setCategory(null)
+    }
+  }, [collection, categories, category])
+
+  /* ======================
      Load products
   ====================== */
   useEffect(() => {
@@ -171,7 +181,7 @@ const Catalog = () => {
           onCategoryChange={setCategory}
           onCollectionChange={(v) => {
             setCollection(v)
-            setCategory(null)
+            setCategory(null) // limpieza inmediata
           }}
           onStockFilterChange={setInStock}
           onClearFilters={clearFilters}

@@ -34,8 +34,8 @@ import { createConsultation } from "@/services/consultations.service";
 import { WHATSAPP_NUMBER } from "@/config/api";
 
 /* ================================
-   TYPES & INTERFACES
-================================= */
+   TYPES
+================================ */
 interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -54,621 +54,229 @@ interface ConsultationItem {
   qty: number;
 }
 
-interface ApiError extends Error {
-  status?: number;
-  code?: string;
+interface ConsultationResponse {
+  whatsappMessage: string;
+}
+
+interface ApiError {
+  message: string;
 }
 
 /* ================================
    CONSTANTS
-================================= */
+================================ */
 const TOAST_DURATION = 2000;
-const CLEAR_CART_DELAY = 500;
-const ANIMATION_DURATION = 0.2;
-const ITEM_ANIMATION_DELAY = 0.05;
 
 /* ================================
-   HELPERS & UTILITIES
-================================= */
-const isApiError = (error: unknown): error is ApiError => {
-  return error instanceof Error;
-};
-
-const extractErrorMessage = (error: unknown): string => {
-  if (isApiError(error)) {
-    return error.message || "No se pudo enviar la consulta";
-  }
-  if (typeof error === "string") {
-    return error;
-  }
-  return "Error desconocido";
-};
-
-const formatPhoneNumber = (phone: string): string => {
-  return phone.replace(/\D/g, "");
-};
-
-const isIOSDevice = (): boolean => {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent);
-};
-
-const isSafariBrowser = (): boolean => {
-  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-};
-
-const openWhatsApp = (url: string): void => {
-  const needsDirectNavigation = isIOSDevice() || isSafariBrowser();
-
-  if (needsDirectNavigation) {
-    window.location.href = url;
-  } else {
-    const newWindow = window.open(url, "_blank", "noopener,noreferrer");
-    if (!newWindow) {
-      window.location.href = url;
-    }
-  }
-};
-
-const getSafeAreaStyle = (): React.CSSProperties => {
-  return {
-    paddingTop: "env(safe-area-inset-top)",
-    paddingBottom: "env(safe-area-inset-bottom)",
-    paddingLeft: "env(safe-area-inset-left)",
-    paddingRight: "env(safe-area-inset-right)",
-  };
-};
-
-/* ================================
-   CUSTOM HOOKS
-================================= */
-const useScrollLock = (isLocked: boolean) => {
-  const scrollPositionRef = useRef({ x: 0, y: 0 });
-
-  useEffect(() => {
-    if (!isLocked) return;
-
-    scrollPositionRef.current = {
-      x: window.scrollX,
-      y: window.scrollY,
-    };
-
-    const scrollbarWidth =
-      window.innerWidth - document.documentElement.clientWidth;
-
-    document.body.style.overflow = "hidden";
-    document.body.style.paddingRight =
-      scrollbarWidth > 0 ? `${scrollbarWidth}px` : "";
-
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.paddingRight = "";
-    };
-  }, [isLocked]);
-};
-
-/* ================================
-   SUB-COMPONENTS
-================================= */
-const NeonGlow = ({
-  color = "cyan",
-  className = "",
-}: {
-  color?: string;
-  className?: string;
-}) => (
-  <div
-    className={`absolute inset-0 opacity-20 blur-2xl pointer-events-none ${className}`}
-    style={{
-      background: `radial-gradient(circle at center, ${
-        color === "cyan"
-          ? "rgba(34, 211, 238, 0.3)"
-          : color === "purple"
-          ? "rgba(168, 85, 247, 0.3)"
-          : color === "pink"
-          ? "rgba(236, 72, 153, 0.3)"
-          : color === "green"
-          ? "rgba(52, 211, 153, 0.3)"
-          : "rgba(34, 211, 238, 0.3)"
-      }, transparent 70%)`,
-    }}
-  />
-);
-
-const CartHeader = ({
-  itemCount,
-  onClose,
-}: {
-  itemCount: number;
-  onClose: () => void;
-}) => (
-  <SheetHeader className="pb-6 border-b border-slate-700/30 relative">
-    <div className="absolute -top-2 -left-2 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl" />
-    <div className="absolute -top-2 -right-2 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl" />
-
-    <SheetTitle className="flex items-center justify-between gap-4 relative">
-      <div className="flex items-center gap-3">
-        <motion.div
-          className="p-3 rounded-2xl bg-slate-800/80 border border-cyan-500/30 relative overflow-hidden group"
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <ShoppingBag className="w-6 h-6 text-cyan-400 relative z-10" />
-          <div className="absolute inset-0 bg-cyan-400/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        </motion.div>
-        <div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Mi Consulta
-          </span>
-          <div className="h-0.5 w-0 group-hover:w-full bg-gradient-to-r from-cyan-500/50 to-purple-500/50 transition-all duration-500" />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-          <Badge className="px-4 py-2 bg-gradient-to-r from-cyan-600/80 to-purple-600/80 text-white border border-cyan-500/30 font-bold text-base shadow-lg shadow-cyan-500/20 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-white/20 to-cyan-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-            <Sparkles className="w-4 h-4 mr-1.5 inline" />
-            {itemCount}
-          </Badge>
-        </motion.div>
-
-        <motion.button
-          onClick={onClose}
-          className="p-2 rounded-xl bg-slate-800/60 border border-slate-600/30 hover:border-pink-500/40 text-slate-400 hover:text-pink-400 transition-all duration-300 group"
-          whileHover={{ scale: 1.05, rotate: 90 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <X className="w-5 h-5" />
-          <div className="absolute inset-0 bg-pink-400/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity blur-xl" />
-        </motion.button>
-      </div>
-    </SheetTitle>
-  </SheetHeader>
-);
-
-const EmptyCart = () => (
-  <motion.div
-    className="flex-1 flex flex-col items-center justify-center gap-6 py-16"
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-  >
-    <motion.div
-      className="p-10 rounded-3xl bg-slate-800/40 border border-slate-700/40 relative overflow-hidden group"
-      whileHover={{ scale: 1.05 }}
-      transition={{ type: "spring", stiffness: 300 }}
-    >
-      <NeonGlow
-        color="purple"
-        className="opacity-0 group-hover:opacity-30 transition-opacity duration-700"
-      />
-      <ShoppingBag className="w-20 h-20 text-slate-600 relative z-10 group-hover:text-purple-500/50 transition-colors duration-500" />
-      <motion.div className="absolute inset-0 border border-purple-500/0 group-hover:border-purple-500/30 rounded-3xl transition-all duration-500" />
-    </motion.div>
-
-    <div className="text-center space-y-2 max-w-xs">
-      <motion.p
-        className="text-xl font-bold text-slate-200"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        Tu consulta está vacía
-      </motion.p>
-      <motion.p
-        className="text-sm text-slate-500 leading-relaxed"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        Agregá productos para comenzar tu consulta personalizada
-      </motion.p>
-    </div>
-  </motion.div>
-);
-
-const CartItemImage = ({ src, alt }: { src?: string; alt: string }) => {
-  const [hasError, setHasError] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  if (!src || hasError) {
-    return (
-      <div className="w-24 h-24 flex items-center justify-center rounded-2xl bg-gradient-to-br from-slate-700/50 to-slate-800/50 flex-shrink-0 border border-slate-600/40 relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        <Package className="w-10 h-10 text-slate-500 relative z-10 group-hover:text-cyan-400/50 transition-colors duration-500" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative w-24 h-24 flex-shrink-0 rounded-2xl overflow-hidden border border-slate-600/40 group">
-      <motion.div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
-      <img
-        src={src}
-        alt={alt}
-        onError={() => setHasError(true)}
-        onLoad={() => setIsLoaded(true)}
-        className={`w-full h-full object-cover transition-all duration-500 ${
-          isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"
-        } group-hover:scale-110`}
-        loading="lazy"
-        decoding="async"
-      />
-      <div className="absolute inset-0 border border-cyan-500/0 group-hover:border-cyan-500/30 rounded-2xl transition-all duration-500" />
-    </div>
-  );
-};
-
-const CartItemCard = ({
-  item,
-  index,
-  onRemove,
-  reduceMotion,
-}: {
-  item: CartItem;
-  index: number;
-  onRemove: (id: string, name: string) => void;
-  reduceMotion: boolean;
-}) => {
-  const handleRemove = useCallback(() => {
-    onRemove(item.id, item.name);
-  }, [item.id, item.name, onRemove]);
-
-  return (
-    <motion.div
-      key={item.id}
-      initial={reduceMotion ? undefined : { opacity: 0, x: -20 }}
-      animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
-      exit={reduceMotion ? undefined : { opacity: 0, x: 20, scale: 0.9 }}
-      transition={
-        reduceMotion
-          ? undefined
-          : {
-              type: "spring",
-              stiffness: 300,
-              damping: 25,
-              delay: index * 0.05,
-            }
-      }
-      whileHover={reduceMotion ? undefined : { scale: 1.02, x: 4 }}
-      className="group flex items-center gap-4 p-4 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/50 hover:border-cyan-500/30 transition-all duration-300 relative overflow-hidden"
-    >
-      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-purple-500/5 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="absolute top-0 left-0 w-1 h-0 bg-gradient-to-b from-cyan-500 via-purple-500 to-pink-500 group-hover:h-full transition-all duration-500" />
-
-      <CartItemImage src={item.image} alt={item.name} />
-
-      <div className="flex-1 min-w-0 relative z-10">
-        <p className="font-bold text-base text-slate-100 line-clamp-2 leading-snug mb-2 group-hover:text-white transition-colors duration-300">
-          {item.name}
-        </p>
-        {item.category && (
-          <motion.div whileHover={{ scale: 1.05 }} className="inline-block">
-            <Badge
-              variant="secondary"
-              className="text-xs bg-purple-500/15 text-purple-300 border border-purple-500/30 px-3 py-1 font-medium"
-            >
-              {item.category}
-            </Badge>
-          </motion.div>
-        )}
-      </div>
-
-      <motion.div
-        whileHover={{ scale: 1.1, rotate: 5 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={handleRemove}
-          className="min-w-[48px] min-h-[48px] rounded-xl bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 hover:text-pink-300 border border-pink-500/30 hover:border-pink-500/50 transition-all flex-shrink-0 touch-manipulation relative overflow-hidden group/btn"
-          aria-label={`Eliminar ${item.name}`}
-        >
-          <div className="absolute inset-0 bg-pink-400/20 blur-xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300" />
-          <Trash2 className="w-5 h-5 relative z-10" />
-        </Button>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-const CartActions = ({
-  onWhatsAppClick,
-  onClearClick,
-  isLoading,
-}: {
-  onWhatsAppClick: () => void;
-  onClearClick: () => void;
-  isLoading: boolean;
-}) => (
-  <div className="pt-6 border-t border-slate-700/30 space-y-3 relative">
-    <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-64 h-20 bg-cyan-500/5 blur-3xl" />
-
-    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-      <Button
-        onClick={onWhatsAppClick}
-        disabled={isLoading}
-        size="lg"
-        className="relative w-full h-16 text-lg font-bold overflow-hidden bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 hover:from-emerald-500 hover:to-green-500 text-white border-0 shadow-2xl shadow-emerald-500/30 touch-manipulation disabled:opacity-50 transition-all duration-300 group"
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-        <div className="absolute inset-0 bg-emerald-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        {isLoading ? (
-          <motion.div
-            className="flex items-center relative z-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <Loader2 className="w-6 h-6 mr-2 animate-spin" />
-            Enviando consulta…
-          </motion.div>
-        ) : (
-          <span className="flex items-center relative z-10">
-            <MessageCircle className="w-6 h-6 mr-2" />
-            Consultar por WhatsApp
-          </span>
-        )}
-      </Button>
-    </motion.div>
-
-    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-      <Button
-        variant="outline"
-        onClick={onClearClick}
-        size="lg"
-        className="w-full h-14 text-base font-bold bg-slate-800/40 hover:bg-pink-500/10 text-slate-300 hover:text-pink-300 border border-slate-700/40 hover:border-pink-500/40 transition-all duration-300 touch-manipulation relative overflow-hidden group"
-        aria-label="Vaciar consulta"
-      >
-        <div className="absolute inset-0 bg-pink-400/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        <Trash2 className="w-5 h-5 mr-2 relative z-10" />
-        <span className="relative z-10">Vaciar consulta</span>
-      </Button>
-    </motion.div>
-  </div>
-);
-
-const ClearConfirmDialog = ({
-  isOpen,
-  onOpenChange,
-  onConfirm,
-}: {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
-}) => (
-  <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
-    <AlertDialogContent className="bg-slate-900/98 backdrop-blur-2xl border border-slate-700/50 max-w-md relative overflow-hidden">
-      <div className="absolute -top-20 -left-20 w-40 h-40 bg-pink-500/10 rounded-full blur-3xl" />
-      <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl" />
-
-      <AlertDialogHeader className="relative z-10">
-        <AlertDialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
-          <motion.div
-            className="p-3 rounded-xl bg-pink-500/15 border border-pink-500/30 relative overflow-hidden"
-            whileHover={{ scale: 1.1, rotate: 5 }}
-          >
-            <div className="absolute inset-0 bg-pink-400/20 blur-xl opacity-50" />
-            <Trash2 className="w-6 h-6 text-pink-400 relative z-10" />
-          </motion.div>
-          <span className="bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
-            ¿Vaciar consulta?
-          </span>
-        </AlertDialogTitle>
-        <AlertDialogDescription className="text-sm text-slate-400 leading-relaxed pt-3 pl-1">
-          Se eliminarán todos los productos de tu consulta. Esta acción no se
-          puede deshacer.
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <AlertDialogFooter className="gap-3 sm:gap-3 relative z-10">
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="flex-1"
-        >
-          <AlertDialogCancel className="w-full h-12 text-sm font-bold bg-slate-800/60 hover:bg-slate-800 text-slate-300 border border-slate-700/50 hover:border-slate-600 touch-manipulation transition-all duration-300">
-            Cancelar
-          </AlertDialogCancel>
-        </motion.div>
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="flex-1"
-        >
-          <AlertDialogAction
-            onClick={onConfirm}
-            className="w-full h-12 text-sm font-bold bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white touch-manipulation transition-all duration-300 shadow-lg shadow-pink-500/30 relative overflow-hidden group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-            <span className="relative z-10">Vaciar todo</span>
-          </AlertDialogAction>
-        </motion.div>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
-);
+   HELPERS
+================================ */
+const formatPhoneNumber = (phone: string): string =>
+  phone.replace(/\D/g, "");
 
 /* ================================
    MAIN COMPONENT
-================================= */
+================================ */
 const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
-  const { items, removeFromCart, clearCart } = useCart();
+  const { items, removeFromCart, clearCart } = useCart<CartItem>();
   const { toast } = useToast();
-  const prefersReducedMotion = useReducedMotion() || false;
+  const reduceMotion = useReducedMotion() ?? false;
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [showClearDialog, setShowClearDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showClearDialog, setShowClearDialog] = useState<boolean>(false);
 
-  useScrollLock(isOpen);
+  const itemCount = useMemo<number>(() => items.length, [items.length]);
+  const isEmpty = itemCount === 0;
 
-  const itemCount = useMemo(() => items.length, [items.length]);
-  const isEmpty = useMemo(() => items.length === 0, [items.length]);
+  /* ================================
+     WHATSAPP HANDLER (FIX REAL)
+  ================================ */
+  const handleWhatsAppClick = useCallback(async (): Promise<void> => {
+    if (isEmpty || !WHATSAPP_NUMBER) return;
 
-const handleWhatsAppClick = useCallback(async () => {
-  if (isEmpty) return;
+    const phone = formatPhoneNumber(WHATSAPP_NUMBER);
 
-  if (!WHATSAPP_NUMBER) {
-    toast({
-      title: "❌ Configuración faltante",
-      description: "No está configurado el número de WhatsApp",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  const phone = formatPhoneNumber(WHATSAPP_NUMBER);
-
-  // ✅ 1. Abrimos WhatsApp inmediatamente (gesto del usuario)
-  const whatsappWindow = window.open(
-    `https://wa.me/${phone}`,
-    "_blank",
-    "noopener,noreferrer"
-  );
-
-  setIsLoading(true);
-
-  try {
-    // ✅ 2. Recién ahora hacemos el await
-    const consultationItems: ConsultationItem[] = items.map(item => ({
-      productId: item.id,
-      qty: item.quantity ?? 1,
-    }));
-
-    const response = await createConsultation(consultationItems);
-
-    if (!response.whatsappMessage) {
-      throw new Error("No se pudo generar el mensaje de WhatsApp");
-    }
-
-    // ✅ 3. Redirigimos la pestaña ya abierta
-    whatsappWindow?.location.replace(
-      `https://wa.me/${phone}?text=${encodeURIComponent(
-        response.whatsappMessage
-      )}`
+    // ✅ Abrimos la pestaña inmediatamente (gesto del usuario)
+    const whatsappWindow: Window | null = window.open(
+      `https://wa.me/${phone}`,
+      "_blank",
+      "noopener,noreferrer"
     );
 
-    clearCart();
-    onClose();
+    setIsLoading(true);
 
-    toast({
-      description: "Consulta enviada. Abriendo WhatsApp…",
-      duration: TOAST_DURATION,
-    });
+    try {
+      const consultationItems: ConsultationItem[] = items.map(
+        (item): ConsultationItem => ({
+          productId: item.id,
+          qty: item.quantity ?? 1,
+        })
+      );
 
-  } catch (err) {
-    // ❌ Si algo falla, cerramos la pestaña
-    whatsappWindow?.close();
+      const response = (await createConsultation(
+        consultationItems
+      )) as ConsultationResponse;
 
-    toast({
-      title: "❌ Error al enviar",
-      description: extractErrorMessage(err),
-      variant: "destructive",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-}, [isEmpty, items, clearCart, onClose, toast]);
+      if (!response.whatsappMessage) {
+        throw new Error("No se pudo generar el mensaje de WhatsApp");
+      }
 
+      // ✅ Redirigimos la pestaña ya abierta
+      whatsappWindow?.location.replace(
+        `https://wa.me/${phone}?text=${encodeURIComponent(
+          response.whatsappMessage
+        )}`
+      );
 
-  const handleRemove = useCallback(
-    (id: string, name: string) => {
-      removeFromCart(id);
+      clearCart();
+      onClose();
+
       toast({
-        description: (
-          <div className="flex items-center gap-3">
-            <Trash2 className="w-5 h-5 text-pink-400" />
-            <div>
-              <p className="text-sm font-semibold text-white">
-                Producto eliminado
-              </p>
-              <p className="text-xs text-slate-400">{name}</p>
-            </div>
-          </div>
-        ),
+        description: "Consulta enviada. Abriendo WhatsApp…",
         duration: TOAST_DURATION,
-        className:
-          "bg-slate-900/95 backdrop-blur-md border border-slate-700/50",
       });
+    } catch (error: unknown) {
+      whatsappWindow?.close();
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo enviar la consulta";
+
+      toast({
+        title: "❌ Error",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [items, isEmpty, clearCart, onClose, toast]);
+
+  /* ================================
+     REMOVE / CLEAR
+  ================================ */
+  const handleRemove = useCallback(
+    (id: string): void => {
+      removeFromCart(id);
     },
-    [removeFromCart, toast]
+    [removeFromCart]
   );
 
-  const handleClear = useCallback(() => {
+  const handleClear = useCallback((): void => {
     clearCart();
     setShowClearDialog(false);
-    toast({
-      description: (
-        <div className="flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 text-purple-400" />
-          <p className="text-sm font-semibold text-white">Consulta vaciada</p>
-        </div>
-      ),
-      duration: TOAST_DURATION,
-      className: "bg-slate-900/95 backdrop-blur-md border border-slate-700/50",
-    });
-  }, [clearCart, toast]);
+  }, [clearCart]);
 
-  const handleClearClick = useCallback(() => {
-    setShowClearDialog(true);
-  }, []);
-
-  const handleDialogChange = useCallback((open: boolean) => {
-    setShowClearDialog(open);
-  }, []);
-
+  /* ================================
+     RENDER
+  ================================ */
   return (
     <>
-      <Sheet
-        open={isOpen}
-        onOpenChange={(open) => {
-          if (!open) onClose();
-        }}
-      >
-        <SheetContent
-          className="w-full sm:max-w-lg flex flex-col bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 backdrop-blur-xl border-l border-slate-700/40 relative overflow-hidden"
-          style={getSafeAreaStyle()}
-        >
-          {/* Ambient background effects */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-br from-cyan-500/5 via-transparent to-pink-500/5 pointer-events-none" />
-
-          <CartHeader itemCount={itemCount} onClose={onClose} />
+      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <SheetContent className="w-full sm:max-w-lg flex flex-col bg-slate-950">
+          <SheetHeader>
+            <SheetTitle className="flex justify-between items-center">
+              <span className="text-xl font-bold">Mi Consulta</span>
+              <Badge>{itemCount}</Badge>
+            </SheetTitle>
+          </SheetHeader>
 
           {isEmpty ? (
-            <EmptyCart />
+            <div className="flex-1 flex items-center justify-center text-slate-500">
+              No hay productos en la consulta
+            </div>
           ) : (
             <>
-              <div className="flex-1 overflow-y-auto py-6 space-y-3 scrollbar-thin scrollbar-thumb-slate-700/50 scrollbar-track-transparent hover:scrollbar-thumb-slate-600/50 transition-colors">
-                <AnimatePresence mode="popLayout">
+              <div className="flex-1 overflow-y-auto space-y-3 py-4">
+                <AnimatePresence>
                   {items.map((item, index) => (
-                    <CartItemCard
+                    <motion.div
                       key={item.id}
-                      item={item}
-                      index={index}
-                      onRemove={handleRemove}
-                      reduceMotion={prefersReducedMotion}
-                    />
+                      initial={!reduceMotion ? { opacity: 0, y: 10 } : undefined}
+                      animate={!reduceMotion ? { opacity: 1, y: 0 } : undefined}
+                      exit={!reduceMotion ? { opacity: 0 } : undefined}
+                      transition={{ delay: index * 0.05 }}
+                      className="flex items-center gap-4 bg-slate-800/40 p-4 rounded-xl"
+                    >
+                      <div className="w-16 h-16 bg-slate-700 rounded-xl flex items-center justify-center">
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                        ) : (
+                          <Package className="text-slate-400" />
+                        )}
+                      </div>
+
+                      <div className="flex-1">
+                        <p className="font-semibold">{item.name}</p>
+                        {item.category && (
+                          <Badge variant="secondary">{item.category}</Badge>
+                        )}
+                      </div>
+
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleRemove(item.id)}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </motion.div>
                   ))}
                 </AnimatePresence>
               </div>
 
-              <CartActions
-                onWhatsAppClick={handleWhatsAppClick}
-                onClearClick={handleClearClick}
-                isLoading={isLoading}
-              />
+              <div className="pt-4 space-y-3">
+                <Button
+                  onClick={handleWhatsAppClick}
+                  disabled={isLoading}
+                  className="w-full h-14 bg-emerald-600 hover:bg-emerald-500"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2" />
+                      Enviando…
+                    </>
+                  ) : (
+                    <>
+                      <MessageCircle className="mr-2" />
+                      Consultar por WhatsApp
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setShowClearDialog(true)}
+                  className="w-full"
+                >
+                  Vaciar consulta
+                </Button>
+              </div>
             </>
           )}
         </SheetContent>
       </Sheet>
 
-      <ClearConfirmDialog
-        isOpen={showClearDialog}
-        onOpenChange={handleDialogChange}
-        onConfirm={handleClear}
-      />
+      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Vaciar consulta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClear}>
+              Vaciar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

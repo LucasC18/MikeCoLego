@@ -2,10 +2,8 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Trash2,
   MessageCircle,
-  ShoppingBag,
   Loader2,
   Package,
-  X,
 } from "lucide-react";
 import { useState, useCallback, useMemo } from "react";
 import { useCart } from "@/context/CartContext";
@@ -66,7 +64,7 @@ const formatPhoneNumber = (phone: string): string =>
    MAIN COMPONENT
 ================================ */
 const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
-  // ✅ SIN genéricos (el contexto ya está tipado)
+  // 👉 SIN genéricos: el contexto ya está tipado internamente
   const { items, removeFromCart, clearCart } = useCart();
   const { toast } = useToast();
   const reduceMotion = useReducedMotion() ?? false;
@@ -74,20 +72,20 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showClearDialog, setShowClearDialog] = useState<boolean>(false);
 
-  const itemCount = useMemo(() => items.length, [items.length]);
+  const itemCount = useMemo<number>(() => items.length, [items.length]);
   const isEmpty = itemCount === 0;
 
   /* ================================
-     WHATSAPP HANDLER (FIX REAL)
+     WHATSAPP HANDLER (FINAL)
   ================================ */
   const handleWhatsAppClick = useCallback(async (): Promise<void> => {
     if (isEmpty || !WHATSAPP_NUMBER) return;
 
     const phone = formatPhoneNumber(WHATSAPP_NUMBER);
 
-    // ✅ abrir ventana SIN await
+    // ✅ 1. Abrimos una pestaña EN BLANCO (gesto del usuario)
     const whatsappWindow: Window | null = window.open(
-      `https://wa.me/${phone}`,
+      "about:blank",
       "_blank",
       "noopener,noreferrer"
     );
@@ -95,6 +93,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
     setIsLoading(true);
 
     try {
+      // 2. Construimos payload
       const consultationItems: ConsultationItem[] = items.map(
         (item: CartItem) => ({
           productId: item.id,
@@ -102,6 +101,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
         })
       );
 
+      // 3. Llamada al backend
       const response = (await createConsultation(
         consultationItems
       )) as ConsultationResponse;
@@ -110,6 +110,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
         throw new Error("No se pudo generar el mensaje de WhatsApp");
       }
 
+      // 4. Navegamos UNA sola vez con el mensaje completo
       whatsappWindow?.location.replace(
         `https://wa.me/${phone}?text=${encodeURIComponent(
           response.whatsappMessage
@@ -124,6 +125,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
         duration: 2000,
       });
     } catch (error: unknown) {
+      // Si falla, cerramos la pestaña en blanco
       whatsappWindow?.close();
 
       const message =

@@ -139,35 +139,69 @@ const useScrollLock = (isLocked: boolean) => {
    SUB-COMPONENTS
 ================================= */
 const CartHeader = ({ itemCount }: { itemCount: number }) => (
-  <SheetHeader className="pb-5 border-b border-slate-700/50">
-    <SheetTitle className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20">
-          <ShoppingBag className="w-5 h-5 text-violet-400" />
+  <SheetHeader className="pb-6 border-b border-slate-700/30 relative">
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
+      <SheetTitle className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <motion.div 
+            className="relative p-3 rounded-xl bg-gradient-to-br from-violet-500/15 to-fuchsia-500/15 border border-violet-500/30"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 blur-xl" />
+            <ShoppingBag className="w-5 h-5 text-violet-300 relative z-10" />
+          </motion.div>
+          <span className="text-xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">
+            Mi Consulta
+          </span>
         </div>
-        <span className="text-xl font-bold text-white">
-          Mi Consulta
-        </span>
-      </div>
-      <Badge className="px-3 py-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white border-0 font-semibold">
-        {itemCount}
-      </Badge>
-    </SheetTitle>
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 500, damping: 25, delay: 0.2 }}
+        >
+          <Badge className="px-3.5 py-1.5 bg-gradient-to-r from-violet-600/90 to-fuchsia-600/90 text-white border-0 font-bold text-sm shadow-lg shadow-violet-900/30">
+            {itemCount}
+          </Badge>
+        </motion.div>
+      </SheetTitle>
+    </motion.div>
+    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
   </SheetHeader>
 );
 
 const EmptyCart = () => (
-  <div className="flex-1 flex flex-col items-center justify-center gap-5 py-12">
-    <div className="p-7 rounded-2xl bg-slate-800/30 border border-slate-700/50">
-      <ShoppingBag className="w-16 h-16 text-slate-600" />
-    </div>
-    <div className="text-center space-y-1.5">
+  <motion.div 
+    className="flex-1 flex flex-col items-center justify-center gap-6 py-12"
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.5, ease: "easeOut" }}
+  >
+    <motion.div 
+      className="relative p-8 rounded-2xl bg-slate-800/20 border border-slate-700/30"
+      animate={{ 
+        scale: [1, 1.05, 1],
+      }}
+      transition={{
+        duration: 2,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }}
+    >
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500/5 to-fuchsia-500/5 blur-2xl" />
+      <ShoppingBag className="w-20 h-20 text-slate-500 relative z-10" />
+    </motion.div>
+    <div className="text-center space-y-2">
       <p className="text-lg font-semibold text-white">
         Tu consulta está vacía
       </p>
       <p className="text-sm text-slate-400">Agregá productos para consultar</p>
     </div>
-  </div>
+  </motion.div>
 );
 
 const CartItemImage = ({ src, alt }: { src?: string; alt: string }) => {
@@ -175,19 +209,21 @@ const CartItemImage = ({ src, alt }: { src?: string; alt: string }) => {
 
   if (!src || hasError) {
     return (
-      <div className="w-20 h-20 flex items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 flex-shrink-0 border border-slate-600/50">
-        <Package className="w-8 h-8 text-slate-500" />
+      <div className="w-20 h-20 flex items-center justify-center rounded-xl bg-gradient-to-br from-slate-700/50 to-slate-800/50 flex-shrink-0 border border-slate-600/30 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent" />
+        <Package className="w-8 h-8 text-slate-400 relative z-10" />
       </div>
     );
   }
 
   return (
-    <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden border border-slate-600/50">
+    <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden border border-slate-600/30 group">
+      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
       <img
         src={src}
         alt={alt}
         onError={() => setHasError(true)}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
         loading="lazy"
         decoding="async"
       />
@@ -210,47 +246,97 @@ const CartItemCard = ({
     onRemove(item.id, item.name);
   }, [item.id, item.name, onRemove]);
 
+  if (reduceMotion) {
+    return (
+      <div key={item.id} className="group relative">
+        <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-800/30 border border-slate-700/30 backdrop-blur-sm relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/5 to-fuchsia-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          <CartItemImage src={item.image} alt={item.name} />
+
+          <div className="flex-1 min-w-0 relative z-10">
+            <p className="font-semibold text-sm text-white line-clamp-2 leading-snug mb-2">
+              {item.name}
+            </p>
+            {item.category && (
+              <Badge
+                variant="secondary"
+                className="text-xs bg-violet-500/20 text-violet-200 border-violet-500/30 font-medium"
+              >
+                {item.category}
+              </Badge>
+            )}
+          </div>
+
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={handleRemove}
+            className="min-w-[44px] min-h-[44px] rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500/50 transition-all flex-shrink-0 touch-manipulation relative z-10"
+            aria-label={`Eliminar ${item.name}`}
+          >
+            <Trash2 className="w-4.5 h-4.5" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       key={item.id}
-      initial={reduceMotion ? undefined : { opacity: 0, y: 10 }}
-      animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-      exit={reduceMotion ? undefined : { opacity: 0, scale: 0.95 }}
-      transition={
-        reduceMotion
-          ? undefined
-          : {
-              duration: 0.2,
-              delay: index * 0.03,
-            }
-      }
-      className="group flex items-center gap-3.5 p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-200"
+      initial={{ opacity: 0, x: -20, scale: 0.95 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 20, scale: 0.9 }}
+      transition={{
+        delay: index * 0.06,
+        duration: 0.35,
+        ease: [0.22, 1, 0.36, 1]
+      }}
+      layout
+      className="group relative"
     >
-      <CartItemImage src={item.image} alt={item.name} />
-
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm text-white line-clamp-2 leading-snug mb-1.5">
-          {item.name}
-        </p>
-        {item.category && (
-          <Badge
-            variant="secondary"
-            className="text-xs bg-violet-500/15 text-violet-300 border-violet-500/25"
-          >
-            {item.category}
-          </Badge>
-        )}
-      </div>
-
-      <Button
-        size="icon"
-        variant="ghost"
-        onClick={handleRemove}
-        className="min-w-[44px] min-h-[44px] rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/25 hover:border-rose-500/40 transition-all flex-shrink-0 touch-manipulation"
-        aria-label={`Eliminar ${item.name}`}
+      <motion.div
+        className="flex items-center gap-4 p-4 rounded-xl bg-slate-800/30 border border-slate-700/30 backdrop-blur-sm relative overflow-hidden"
+        whileHover={{ 
+          scale: 1.01,
+          borderColor: "rgba(139, 92, 246, 0.3)",
+          transition: { duration: 0.2 }
+        }}
       >
-        <Trash2 className="w-4.5 h-4.5" />
-      </Button>
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/5 to-fuchsia-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        <CartItemImage src={item.image} alt={item.name} />
+
+        <div className="flex-1 min-w-0 relative z-10">
+          <p className="font-semibold text-sm text-white line-clamp-2 leading-snug mb-2">
+            {item.name}
+          </p>
+          {item.category && (
+            <Badge
+              variant="secondary"
+              className="text-xs bg-violet-500/20 text-violet-200 border-violet-500/30 font-medium"
+            >
+              {item.category}
+            </Badge>
+          )}
+        </div>
+
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={handleRemove}
+            className="min-w-[44px] min-h-[44px] rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500/50 transition-all flex-shrink-0 touch-manipulation relative z-10"
+            aria-label={`Eliminar ${item.name}`}
+          >
+            <Trash2 className="w-4.5 h-4.5" />
+          </Button>
+        </motion.div>
+      </motion.div>
     </motion.div>
   );
 };
@@ -264,36 +350,49 @@ const CartActions = ({
   onClearClick: () => void;
   isLoading: boolean;
 }) => (
-  <div className="pt-5 border-t border-slate-700/50 space-y-2.5">
-    <Button
-      onClick={onWhatsAppClick}
-      disabled={isLoading}
-      size="lg"
-      className="relative w-full h-14 text-base font-semibold overflow-hidden bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white border-0 shadow-lg shadow-emerald-900/30 touch-manipulation disabled:opacity-50 transition-all duration-200"
+  <div className="pt-6 border-t border-slate-700/30 space-y-3 relative">
+    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
+    
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
     >
-      {isLoading ? (
-        <>
-          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-          Enviando…
-        </>
-      ) : (
-        <>
-          <MessageCircle className="w-5 h-5 mr-2" />
-          Consultar por WhatsApp
-        </>
-      )}
-    </Button>
+      <Button
+        onClick={onWhatsAppClick}
+        disabled={isLoading}
+        size="lg"
+        className="relative w-full h-14 text-base font-bold overflow-hidden bg-gradient-to-r from-emerald-600/90 to-green-600/90 hover:from-emerald-500/90 hover:to-green-500/90 text-white border-0 shadow-xl shadow-emerald-900/40 touch-manipulation disabled:opacity-50 transition-all duration-300 group"
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+        {isLoading ? (
+          <>
+            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            Enviando…
+          </>
+        ) : (
+          <>
+            <MessageCircle className="w-5 h-5 mr-2" />
+            Consultar por WhatsApp
+          </>
+        )}
+      </Button>
+    </motion.div>
 
-    <Button
-      variant="outline"
-      onClick={onClearClick}
-      size="lg"
-      className="w-full h-12 text-base font-semibold bg-slate-800/40 hover:bg-rose-500/10 text-slate-300 hover:text-rose-300 border-slate-700/50 hover:border-rose-500/40 transition-all duration-200 touch-manipulation"
-      aria-label="Vaciar consulta"
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
     >
-      <Trash2 className="w-4.5 h-4.5 mr-2" />
-      Vaciar consulta
-    </Button>
+      <Button
+        variant="outline"
+        onClick={onClearClick}
+        size="lg"
+        className="w-full h-12 text-base font-semibold bg-slate-800/30 hover:bg-rose-500/15 text-slate-300 hover:text-rose-200 border-slate-700/30 hover:border-rose-500/40 transition-all duration-300 touch-manipulation"
+        aria-label="Vaciar consulta"
+      >
+        <Trash2 className="w-4.5 h-4.5 mr-2" />
+        Vaciar consulta
+      </Button>
+    </motion.div>
   </div>
 );
 
@@ -307,28 +406,52 @@ const ClearConfirmDialog = ({
   onConfirm: () => void;
 }) => (
   <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
-    <AlertDialogContent className="bg-slate-900/98 backdrop-blur-xl border-slate-700/50 max-w-md">
+    <AlertDialogContent className="bg-slate-900/95 backdrop-blur-xl border-slate-700/40 max-w-md">
       <AlertDialogHeader>
-        <AlertDialogTitle className="text-xl font-bold text-white flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-rose-500/15 border border-rose-500/25">
-            <Trash2 className="w-5 h-5 text-rose-400" />
-          </div>
+        <AlertDialogTitle className="text-xl font-bold text-white flex items-center gap-3">
+          <motion.div 
+            className="p-2.5 rounded-xl bg-rose-500/20 border border-rose-500/30"
+            animate={{
+              boxShadow: [
+                "0 0 0 0 rgba(244, 63, 94, 0)",
+                "0 0 0 8px rgba(244, 63, 94, 0)",
+              ]
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+            }}
+          >
+            <Trash2 className="w-5 h-5 text-rose-300" />
+          </motion.div>
           ¿Vaciar consulta?
         </AlertDialogTitle>
-        <AlertDialogDescription className="text-sm text-slate-400 leading-relaxed pt-2">
+        <AlertDialogDescription className="text-sm text-slate-400 leading-relaxed pt-3">
           Se eliminarán todos los productos de tu consulta. Esta acción no se puede deshacer.
         </AlertDialogDescription>
       </AlertDialogHeader>
-      <AlertDialogFooter className="gap-2.5 sm:gap-2.5">
-        <AlertDialogCancel className="flex-1 h-11 text-sm font-semibold bg-slate-800/60 hover:bg-slate-800 text-slate-300 border-slate-700/50 hover:border-slate-600 touch-manipulation">
-          Cancelar
-        </AlertDialogCancel>
-        <AlertDialogAction
-          onClick={onConfirm}
-          className="flex-1 h-11 text-sm font-semibold bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white touch-manipulation"
+      <AlertDialogFooter className="gap-3 sm:gap-3 pt-2">
+        <motion.div 
+          className="flex-1"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          Vaciar
-        </AlertDialogAction>
+          <AlertDialogCancel className="w-full h-11 text-sm font-semibold bg-slate-800/60 hover:bg-slate-800 text-slate-300 border-slate-700/40 hover:border-slate-600/60 touch-manipulation transition-all duration-200">
+            Cancelar
+          </AlertDialogCancel>
+        </motion.div>
+        <motion.div 
+          className="flex-1"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <AlertDialogAction
+            onClick={onConfirm}
+            className="w-full h-11 text-sm font-semibold bg-gradient-to-r from-rose-600/90 to-red-600/90 hover:from-rose-500/90 hover:to-red-500/90 text-white touch-manipulation shadow-lg shadow-rose-900/30 transition-all duration-200"
+          >
+            Vaciar
+          </AlertDialogAction>
+        </motion.div>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
@@ -391,11 +514,11 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
       toast({
         description: (
           <div className="flex items-center gap-3">
-            <div className="bg-emerald-500/20 p-2 rounded-lg">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <div className="bg-emerald-500/25 p-2.5 rounded-xl border border-emerald-500/30">
+              <CheckCircle2 className="w-5 h-5 text-emerald-300" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-emerald-300">
+              <p className="text-sm font-semibold text-emerald-200">
                 Consulta enviada
               </p>
               <p className="text-xs text-slate-400">Abriendo WhatsApp...</p>
@@ -423,15 +546,17 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
       toast({
         description: (
           <div className="flex items-center gap-3">
-            <Trash2 className="w-5 h-5 text-rose-400" />
+            <div className="bg-rose-500/25 p-2 rounded-lg border border-rose-500/30">
+              <Trash2 className="w-5 h-5 text-rose-300" />
+            </div>
             <div>
               <p className="text-sm font-semibold text-white">Producto eliminado</p>
-              <p className="text-xs text-slate-400">{name}</p>
+              <p className="text-xs text-slate-400 line-clamp-1">{name}</p>
             </div>
           </div>
         ),
         duration: TOAST_DURATION,
-        className: "bg-slate-900/95 backdrop-blur-md border border-slate-700/50",
+        className: "bg-slate-900/95 backdrop-blur-xl border border-slate-700/40",
       });
     },
     [removeFromCart, toast]
@@ -443,12 +568,14 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
     toast({
       description: (
         <div className="flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 text-violet-400" />
+          <div className="bg-violet-500/25 p-2.5 rounded-xl border border-violet-500/30">
+            <CheckCircle2 className="w-5 h-5 text-violet-300" />
+          </div>
           <p className="text-sm font-semibold text-white">Consulta vaciada</p>
         </div>
       ),
       duration: TOAST_DURATION,
-      className: "bg-slate-900/95 backdrop-blur-md border border-slate-700/50",
+      className: "bg-slate-900/95 backdrop-blur-xl border border-slate-700/40",
     });
   }, [clearCart, toast]);
 
@@ -464,36 +591,41 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
     <>
       <Sheet open={isOpen} onOpenChange={onClose}>
         <SheetContent
-          className="w-full sm:max-w-lg flex flex-col bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 backdrop-blur-xl border-slate-700/50"
+          className="w-full sm:max-w-lg flex flex-col bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800/95 backdrop-blur-xl border-slate-700/40 relative overflow-hidden"
           style={getSafeAreaStyle()}
         >
-          <CartHeader itemCount={itemCount} />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-900/10 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-fuchsia-900/10 via-transparent to-transparent pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col h-full">
+            <CartHeader itemCount={itemCount} />
 
-          {isEmpty ? (
-            <EmptyCart />
-          ) : (
-            <>
-              <div className="flex-1 overflow-y-auto py-5 space-y-2.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-                <AnimatePresence mode="popLayout">
-                  {items.map((item, index) => (
-                    <CartItemCard
-                      key={item.id}
-                      item={item}
-                      index={index}
-                      onRemove={handleRemove}
-                      reduceMotion={prefersReducedMotion}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
+            {isEmpty ? (
+              <EmptyCart />
+            ) : (
+              <>
+                <div className="flex-1 overflow-y-auto py-5 space-y-3 scrollbar-thin scrollbar-thumb-slate-700/50 scrollbar-track-transparent hover:scrollbar-thumb-slate-600/50 transition-colors">
+                  <AnimatePresence mode="popLayout">
+                    {items.map((item, index) => (
+                      <CartItemCard
+                        key={item.id}
+                        item={item}
+                        index={index}
+                        onRemove={handleRemove}
+                        reduceMotion={prefersReducedMotion}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
 
-              <CartActions
-                onWhatsAppClick={handleWhatsAppClick}
-                onClearClick={handleClearClick}
-                isLoading={isLoading}
-              />
-            </>
-          )}
+                <CartActions
+                  onWhatsAppClick={handleWhatsAppClick}
+                  onClearClick={handleClearClick}
+                  isLoading={isLoading}
+                />
+              </>
+            )}
+          </div>
         </SheetContent>
       </Sheet>
 

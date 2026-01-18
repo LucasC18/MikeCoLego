@@ -6,12 +6,12 @@ import Navbar from "@/components/Navbar";
 import CartDrawer from "@/components/CartDrawer";
 import {
   Sparkles,
-  ChevronDown,
   ArrowRight,
   Star,
   Loader2,
   Package,
   Zap,
+  ChevronDown,
 } from "lucide-react";
 import heroImage from "@/assets/hero-starwars.jpg";
 import { apiFetch } from "@/config/api";
@@ -105,7 +105,7 @@ const smoothScrollToElement = (elementId: string): void => {
   if (!element) return;
 
   const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-  const offsetPosition = elementPosition - NAVBAR_HEIGHT;
+  const offsetPosition = elementPosition - NAVBAR_HEIGHT - 20;
 
   window.scrollTo({ top: offsetPosition, behavior: SCROLL_BEHAVIOR });
 };
@@ -252,8 +252,8 @@ const OptimizedBackground = ({
   if (prefersReducedMotion || isLowEnd) {
     return (
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/6 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-500/6 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/8 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-500/8 rounded-full blur-3xl" />
       </div>
     );
   }
@@ -261,7 +261,7 @@ const OptimizedBackground = ({
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
       <motion.div
-        className={`absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-violet-500/7 rounded-full ${
+        className={`absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-violet-500/10 rounded-full ${
           isMobile ? "blur-2xl" : "blur-3xl"
         }`}
         style={{ willChange: "transform" }}
@@ -269,7 +269,7 @@ const OptimizedBackground = ({
           scale: [1, 1.15, 1],
           x: [0, isMobile ? 20 : 50, 0],
           y: [0, isMobile ? 15 : 30, 0],
-          opacity: [0.4, 0.6, 0.4],
+          opacity: [0.5, 0.7, 0.5],
         }}
         transition={{
           duration: isMobile ? 15 : 12,
@@ -280,13 +280,13 @@ const OptimizedBackground = ({
 
       {!isMobile && (
         <motion.div
-          className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-fuchsia-500/7 rounded-full blur-3xl"
+          className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-fuchsia-500/10 rounded-full blur-3xl"
           style={{ willChange: "transform" }}
           animate={{
             scale: [1, 1.2, 1],
             x: [0, -40, 0],
             y: [0, -25, 0],
-            opacity: [0.4, 0.6, 0.4],
+            opacity: [0.5, 0.7, 0.5],
           }}
           transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -294,11 +294,11 @@ const OptimizedBackground = ({
 
       {!isMobile && (
         <motion.div
-          className="absolute top-1/2 right-1/3 w-[350px] h-[350px] bg-cyan-500/5 rounded-full blur-3xl"
+          className="absolute top-1/2 right-1/3 w-[350px] h-[350px] bg-cyan-500/8 rounded-full blur-3xl"
           style={{ willChange: "transform" }}
           animate={{
             scale: [1, 1.1, 1],
-            opacity: [0.3, 0.5, 0.3],
+            opacity: [0.4, 0.6, 0.4],
           }}
           transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -315,7 +315,6 @@ const HeroBackground = ({
   prefersReducedMotion,
 }: {
   imageSrc: string;
-  isMobile: boolean;
   prefersReducedMotion: boolean;
 }) => {
   const isImageLoaded = useImagePreload(imageSrc);
@@ -347,25 +346,25 @@ const HeroBackground = ({
         decoding="async"
       />
 
-      <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-slate-900/40 to-black/60" />
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/20" />
+      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-slate-900/50 to-black/70" />
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-slate-900/30" />
       
-      {/* Subtle vignette */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(15,23,42,0.4)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(15,23,42,0.5)_100%)]" />
     </motion.div>
   );
 };
 
 const HeroBadge = () => (
   <motion.div
-    className="inline-flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-amber-500/10 to-orange-500/10 backdrop-blur-xl border border-amber-500/25 rounded-full mb-8 shadow-lg relative overflow-hidden group"
+    className="inline-flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-amber-500/15 to-orange-500/15 backdrop-blur-xl border border-amber-500/30 rounded-full mb-8 shadow-xl shadow-amber-900/20 relative overflow-hidden group"
     initial={{ opacity: 0, y: -20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.5, delay: 0.2 }}
+    whileHover={{ scale: 1.05 }}
   >
-    <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/10 to-amber-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-    <Sparkles className="w-4 h-4 text-amber-400 relative z-10" />
-    <span className="text-sm font-semibold text-amber-200 relative z-10">Colecciones Exclusivas</span>
+    <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/15 to-amber-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+    <Sparkles className="w-4 h-4 text-amber-300 relative z-10" />
+    <span className="text-sm font-bold text-amber-100 relative z-10">Colecciones Exclusivas</span>
   </motion.div>
 );
 
@@ -377,13 +376,13 @@ const HeroTitle = () => (
     transition={{ duration: 0.6, delay: 0.3 }}
   >
     <span className="text-white drop-shadow-2xl block sm:inline">Jedi</span>
-    <span className="block sm:inline text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400 drop-shadow-2xl"> Collector71</span>
+    <span className="block sm:inline text-transparent bg-clip-text bg-gradient-to-r from-violet-300 to-fuchsia-300 drop-shadow-2xl"> Collector71</span>
   </motion.h1>
 );
 
 const HeroDescription = () => (
   <motion.p
-    className="text-slate-200 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed px-4 drop-shadow-lg"
+    className="text-slate-100 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed px-4 drop-shadow-xl"
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     transition={{ duration: 0.6, delay: 0.5 }}
@@ -412,13 +411,13 @@ const CollectionButtons = ({
         {[1, 2].map((i) => (
           <motion.div
             key={i}
-            className="px-10 py-4 h-14 min-w-[180px] rounded-2xl bg-slate-800/20 border border-slate-700/30 relative overflow-hidden"
+            className="px-10 py-4 h-14 min-w-[180px] rounded-2xl bg-slate-800/30 border border-slate-700/40 relative overflow-hidden backdrop-blur-sm"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.1 }}
           >
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-600/20 to-transparent"
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-600/30 to-transparent"
               animate={{ x: ['-100%', '100%'] }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear", delay: i * 0.3 }}
             />
@@ -447,13 +446,15 @@ const CollectionButtons = ({
               ? undefined
               : { duration: 0.4, delay: 0.7 + index * 0.1 }
           }
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           <Link
             to={`/catalogo?collection=${collection.slug}`}
-            className="group relative inline-block px-10 py-4 h-14 min-w-[180px] rounded-2xl bg-slate-800/30 backdrop-blur-xl border border-slate-700/40 hover:bg-slate-800/50 hover:border-violet-500/30 font-semibold text-base text-white transition-all duration-300 flex items-center justify-center gap-2.5 shadow-lg hover:shadow-violet-500/10 overflow-hidden"
+            className="group relative inline-block px-10 py-4 h-14 min-w-[180px] rounded-2xl bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 hover:bg-slate-800/60 hover:border-violet-500/40 font-bold text-base text-white transition-all duration-300 flex items-center justify-center gap-2.5 shadow-xl shadow-slate-900/50 hover:shadow-violet-500/20 overflow-hidden"
             aria-label={`Ver colección ${collection.name}`}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/5 to-violet-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+            <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/10 to-violet-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
             <Package className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110" />
             <span className="relative z-10">{collection.name}</span>
           </Link>
@@ -472,16 +473,16 @@ const FeaturedButton = ({
 }) => (
   <motion.button
     onClick={onClick}
-    className="group relative px-12 py-4 h-16 min-w-[220px] font-semibold text-lg rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white border-0 shadow-xl shadow-violet-500/25 hover:shadow-violet-500/40 transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden"
+    className="group relative px-12 py-4 h-16 min-w-[220px] font-bold text-lg rounded-2xl bg-gradient-to-r from-violet-600/90 to-fuchsia-600/90 hover:from-violet-500/90 hover:to-fuchsia-500/90 text-white border-0 shadow-2xl shadow-violet-500/30 hover:shadow-violet-500/50 transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden"
     aria-label="Ver productos destacados"
     initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
     animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
     transition={prefersReducedMotion ? undefined : { duration: 0.5, delay: 0.9 }}
-    whileHover={{ scale: 1.03 }}
+    whileHover={{ scale: 1.05, y: -2 }}
     whileTap={{ scale: 0.98 }}
   >
     <motion.div
-      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent"
+      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
       animate={{ x: ['-100%', '100%'] }}
       transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
     />
@@ -490,28 +491,52 @@ const FeaturedButton = ({
   </motion.button>
 );
 
-const ScrollIndicator = ({ prefersReducedMotion }: { prefersReducedMotion: boolean }) => (
-  <motion.div
-    className="absolute bottom-10"
+const ScrollIndicator = ({ 
+  prefersReducedMotion,
+  onClick 
+}: { 
+  prefersReducedMotion: boolean;
+  onClick: () => void;
+}) => (
+  <motion.button
+    onClick={onClick}
+    className="absolute bottom-8 left-1/2 -translate-x-1/2 group cursor-pointer bg-transparent border-0 p-0"
     initial={{ opacity: 0 }}
-    animate={{ opacity: 1, y: prefersReducedMotion ? 0 : [0, 10, 0] }}
+    animate={{ 
+      opacity: 1, 
+      y: prefersReducedMotion ? 0 : [0, 8, 0] 
+    }}
     transition={
       prefersReducedMotion
         ? { duration: 0.5, delay: 1.2 }
-        : { duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }
+        : { 
+            y: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+            opacity: { duration: 0.5, delay: 1.2 }
+          }
     }
+    whileHover={{ scale: 1.1 }}
+    whileTap={{ scale: 0.95 }}
   >
     <div className="flex flex-col items-center gap-2">
-      <div className="w-8 h-12 rounded-full border-2 border-violet-400/40 flex items-start justify-center p-2">
+      <div className="w-8 h-12 rounded-full border-2 border-violet-400/50 flex items-start justify-center p-2 bg-slate-900/30 backdrop-blur-sm group-hover:border-violet-400/70 transition-colors">
         <motion.div
-          className="w-1.5 h-2 bg-violet-400 rounded-full"
-          animate={prefersReducedMotion ? {} : { y: [0, 12, 0], opacity: [1, 0.3, 1] }}
-          transition={prefersReducedMotion ? {} : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="w-1.5 h-2 bg-violet-300 rounded-full"
+          animate={prefersReducedMotion ? {} : { 
+            y: [0, 12, 0], 
+            opacity: [1, 0.3, 1] 
+          }}
+          transition={prefersReducedMotion ? {} : { 
+            duration: 2, 
+            repeat: Infinity, 
+            ease: "easeInOut" 
+          }}
         />
       </div>
-      <span className="text-sm text-slate-300 font-medium">Scrolleá para ver más</span>
+      <span className="text-xs text-slate-200 font-semibold opacity-80 group-hover:opacity-100 transition-opacity">
+        Scrolleá para ver más
+      </span>
     </div>
-  </motion.div>
+  </motion.button>
 );
 
 const LoadingSpinner = ({ message }: { message?: string }) => (
@@ -523,6 +548,7 @@ const LoadingSpinner = ({ message }: { message?: string }) => (
     >
       <Loader2 className="w-14 h-14 text-violet-400" strokeWidth={2} />
     </motion.div>
+    <p className="text-slate-300 text-lg font-semibold">{message || "Cargando..."}</p>
   </div>
 );
 
@@ -533,10 +559,10 @@ const EmptyState = ({ message }: { message: string }) => (
     animate={{ opacity: 1, scale: 1 }}
     transition={{ duration: 0.5 }}
   >
-    <div className="relative bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-12 max-w-md mx-auto overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-700/5 via-transparent to-slate-600/5" />
-      <Package className="w-16 h-16 text-slate-500 mx-auto mb-4 relative z-10" strokeWidth={1.5} />
-      <p className="text-slate-400 text-lg font-medium relative z-10">{message}</p>
+    <div className="relative bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-12 max-w-md mx-auto overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-700/10 via-transparent to-slate-600/10" />
+      <Package className="w-16 h-16 text-slate-400 mx-auto mb-4 relative z-10" strokeWidth={1.5} />
+      <p className="text-slate-300 text-lg font-semibold relative z-10">{message}</p>
     </div>
   </motion.div>
 );
@@ -545,7 +571,6 @@ const SectionTitle = ({
   title,
 }: {
   title: string;
-  prefersReducedMotion: boolean;
 }) => (
   <motion.div
     className="flex items-center justify-center gap-3 mb-14"
@@ -554,9 +579,11 @@ const SectionTitle = ({
     viewport={{ once: true, margin: "-100px" }}
     transition={{ duration: 0.5 }}
   >
-    <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
-    <h2 className="text-3xl md:text-4xl font-bold text-white">{title}</h2>
-    <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
+    <Star className="w-6 h-6 text-amber-300 fill-amber-300" />
+    <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">
+      {title}
+    </h2>
+    <Star className="w-6 h-6 text-amber-300 fill-amber-300" />
   </motion.div>
 );
 
@@ -568,15 +595,20 @@ const CatalogButton = () => (
     viewport={{ once: true, margin: "-50px" }}
     transition={{ duration: 0.5 }}
   >
-    <Link
-      to="/catalogo"
-      className="group relative inline-flex items-center gap-2.5 px-12 py-4 h-14 bg-slate-800/30 backdrop-blur-xl border border-slate-700/40 hover:bg-slate-800/50 hover:border-violet-500/30 rounded-2xl font-semibold text-base text-white transition-all duration-300 shadow-lg hover:shadow-violet-500/10 overflow-hidden"
-      aria-label="Ver catálogo completo de productos"
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/5 to-violet-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-      <span className="relative z-10">Ver Catálogo Completo</span>
-      <ArrowRight className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
-    </Link>
+      <Link
+        to="/catalogo"
+        className="group relative inline-flex items-center gap-2.5 px-12 py-4 h-14 bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 hover:bg-slate-800/60 hover:border-violet-500/40 rounded-2xl font-bold text-base text-white transition-all duration-300 shadow-xl shadow-slate-900/50 hover:shadow-violet-500/20 overflow-hidden"
+        aria-label="Ver catálogo completo de productos"
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/10 to-violet-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+        <span className="relative z-10">Ver Catálogo Completo</span>
+        <ArrowRight className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
+      </Link>
+    </motion.div>
   </motion.div>
 );
 
@@ -660,21 +692,18 @@ const Home = () => {
       >
         <HeroBackground
           imageSrc={heroImage}
-          isMobile={isMobile}
           prefersReducedMotion={prefersReducedMotion}
         />
 
-        <div className="relative z-10 w-full max-w-5xl mx-auto px-6 py-20 flex flex-col items-center justify-center text-center">
-          <motion.div
-            className="w-full flex flex-col items-center"
-          >
+        <div className="relative z-10 w-full max-w-5xl mx-auto px-6 py-20 flex flex-col items-center justify-center text-center min-h-[calc(100dvh-64px)]">
+          <div className="w-full flex flex-col items-center flex-1 justify-center pb-20">
             <HeroBadge />
             <HeroTitle />
             <HeroDescription />
 
             {!isLoadingCollections && collectionsError && (
               <motion.p
-                className="text-sm text-rose-300 mb-6 bg-rose-500/10 border border-rose-500/30 rounded-xl px-4 py-2"
+                className="text-sm text-rose-200 mb-6 bg-rose-500/15 border border-rose-500/40 rounded-xl px-5 py-2.5 backdrop-blur-sm"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
@@ -689,19 +718,22 @@ const Home = () => {
             />
 
             <FeaturedButton onClick={handleScrollToFeatured} prefersReducedMotion={prefersReducedMotion} />
-          </motion.div>
+          </div>
 
-          <ScrollIndicator prefersReducedMotion={prefersReducedMotion} />
+          <ScrollIndicator 
+            prefersReducedMotion={prefersReducedMotion}
+            onClick={handleScrollToFeatured}
+          />
         </div>
       </section>
 
       <main id="featured" className="relative w-full px-6 py-24">
         <div className="max-w-7xl mx-auto">
-          <SectionTitle title="Productos Destacados" prefersReducedMotion={prefersReducedMotion} />
+          <SectionTitle title="Productos Destacados" />
 
           {!isLoadingFeatured && featuredError && (
             <motion.p
-              className="text-center text-sm text-rose-300 mb-8 bg-rose-500/10 border border-rose-500/30 rounded-xl px-6 py-3 max-w-md mx-auto"
+              className="text-center text-sm text-rose-200 mb-8 bg-rose-500/15 border border-rose-500/40 rounded-xl px-6 py-3 max-w-md mx-auto backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
